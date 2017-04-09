@@ -1,9 +1,12 @@
 package com.sandy.jovenotes.jnbatch;
 
+import java.util.List ;
 import java.util.logging.Level;
 
 import org.apache.log4j.Logger;
 
+import com.sandy.jovenotes.jnbatch.dao.ChapterPreparednessRequestDBO ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.PrepRequest ;
 import com.sandy.jovenotes.jnbatch.util.ConfigManager ;
 import com.sandy.jovenotes.jnbatch.util.Database ;
 import com.sandy.jovenotes.jnbatch.util.Stats ;
@@ -49,7 +52,10 @@ public class JoveNotesBatch {
     }
     
     private void start() throws Exception {
-        Stats.printStats() ;
+        List<PrepRequest> requests = new ChapterPreparednessRequestDBO().getRequests() ;
+        for( PrepRequest req : requests ) {
+            log.debug( req ) ;
+        }
     }
     
     public static void main( String[] args ) throws Exception {
