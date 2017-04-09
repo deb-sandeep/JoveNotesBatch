@@ -2,6 +2,9 @@ package com.sandy.jovenotes.jnbatch.util;
 
 import java.io.File ;
 import java.net.URL ;
+import java.util.HashMap ;
+import java.util.Iterator ;
+import java.util.Map ;
 
 import org.apache.commons.cli.CommandLine ;
 import org.apache.commons.cli.DefaultParser ;
@@ -9,6 +12,9 @@ import org.apache.commons.cli.HelpFormatter ;
 import org.apache.commons.cli.Options ;
 import org.apache.commons.configuration.PropertiesConfiguration ;
 import org.apache.log4j.Logger ;
+import org.quartz.Job ;
+
+import com.sandy.jovenotes.jnbatch.job.preparedness.JobConfig ;
 
 /**
  * The configuration manager for JoveNotes processor. All the configuration 
@@ -24,6 +30,11 @@ public class ConfigManager{
     private static String CK_DB_URL        = "db.url" ;
     private static String CK_DB_USER       = "db.user" ;
     private static String CK_DB_PWD        = "db.password" ;
+    private static String CK_JOB_ID_LIST   = "job.id.list" ;
+    
+    private static String CSK_JOB_CLASS    = "class" ;
+    private static String CSK_JOB_CRON     = "cron" ;
+    public  static String CSK_TP_SIZE      = "threadPoolSize" ;
     
     private boolean showUsage          = false ;
     private File    wkspDir            = null ;
@@ -32,6 +43,8 @@ public class ConfigManager{
     private String  databaseUser       = null ;
     private String  databasePassword   = null ;
     private String  runMode            = null ;
+    
+    private Map<String, JobConfig> jobConfigMap = new HashMap<String, JobConfig>() ;
 
     public boolean isShowUsage()          { return this.showUsage; }
     public File    getWorkspaceDir()      { return this.wkspDir ; }
@@ -40,6 +53,10 @@ public class ConfigManager{
     public String  getDatabaseUser()      { return this.databaseUser; }
     public String  getDatabasePassword()  { return this.databasePassword; }
     public String  getRunMode()           { return this.runMode; }
+    
+    public Map<String, JobConfig> getJobConfigMap() {
+        return this.jobConfigMap ;
+    }
     
     // ------------------------------------------------------------------------
     private Options clOptions = null ;
@@ -58,6 +75,7 @@ public class ConfigManager{
         }
         propCfg.load( cfgURL );
         parseDatabaseConfig( propCfg ) ;
+        parseJobConfig( propCfg ) ;
     }
     
     private void parseDatabaseConfig( PropertiesConfiguration config ) 
@@ -73,6 +91,65 @@ public class ConfigManager{
         if( StringUtil.isEmptyOrNull( this.databasePassword ) ) {
             this.databasePassword = config.getString( CK_DB_PWD ) ;
         }
+    }
+    
+    private void parseJobConfig( PropertiesConfiguration config ) 
+        throws Exception {
+        
+        String[] jobIdList = config.getStringArray( CK_JOB_ID_LIST ) ;
+        if( jobIdList == null || jobIdList.length == 0 ) {
+            throw new Exception( "Job id list is missing." ) ; 
+        }
+        else {
+            for( String jobId : jobIdList ) {
+                jobConfigMap.put( jobId, getJobConfig( jobId, config ) ) ;
+            }
+        }
+    }
+    
+    @SuppressWarnings( "unchecked" )
+    private JobConfig getJobConfig( String jobId, PropertiesConfiguration config ) 
+        throws Exception {
+        
+        JobConfig jobConfig = new JobConfig( jobId ) ;
+        
+        PropertiesConfiguration subCfg = getNestedConfig( config, "job." + jobId ) ;
+        
+        String clsName = getMandatoryConfig( CSK_JOB_CLASS, subCfg ) ;
+        jobConfig.setJobClass( (Class<? extends Job>)Class.forName( clsName ) ) ;
+        jobConfig.setCron( subCfg.getString( CSK_JOB_CRON ) );
+        
+        Iterator<String> iter = subCfg.getKeys() ;
+        while( iter.hasNext() ) {
+            String key = iter.next() ;
+            if( key.equals( CSK_JOB_CLASS ) || 
+                key.equals( CSK_JOB_CRON  ) ) {
+                continue ;
+            }
+            jobConfig.getDataMap().put( key, subCfg.getString( key ) ) ;
+        }
+        
+        return jobConfig ;
+    }
+    
+    @SuppressWarnings( "unchecked" )
+    public PropertiesConfiguration getNestedConfig( PropertiesConfiguration config, 
+                                                    String prefix ) {
+        
+        PropertiesConfiguration cfg = new PropertiesConfiguration() ;
+        Iterator<String> iter = config.getKeys( prefix ) ;
+        
+        while( iter.hasNext() ) {
+            String key = iter.next() ;
+            String newKey = key.substring( prefix.length() ) ;
+            
+            if( newKey.startsWith( "." ) ) {
+                newKey = newKey.substring( 1 ) ;
+            }
+            cfg.addProperty( newKey, config.getProperty( key ) ) ;
+        }
+        
+        return cfg ;
     }
     
     private String getMandatoryConfig( String key, PropertiesConfiguration config ) 

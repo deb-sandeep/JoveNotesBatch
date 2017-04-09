@@ -1,15 +1,21 @@
 package com.sandy.jovenotes.jnbatch;
 
-import java.util.List ;
+import static org.quartz.CronScheduleBuilder.cronSchedule ;
+import static org.quartz.JobBuilder.newJob ;
+import static org.quartz.TriggerBuilder.newTrigger ;
+
+import java.util.Map ;
 import java.util.logging.Level;
 
 import org.apache.log4j.Logger;
+import org.quartz.JobDetail ;
+import org.quartz.Scheduler ;
+import org.quartz.Trigger ;
+import org.quartz.impl.StdSchedulerFactory ;
 
-import com.sandy.jovenotes.jnbatch.dao.ChapterPreparednessRequestDBO ;
-import com.sandy.jovenotes.jnbatch.job.preparedness.PrepRequest ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.JobConfig ;
 import com.sandy.jovenotes.jnbatch.util.ConfigManager ;
 import com.sandy.jovenotes.jnbatch.util.Database ;
-import com.sandy.jovenotes.jnbatch.util.Stats ;
 
 /**
  * Main class for the JoveNotes batch application.
@@ -22,6 +28,8 @@ public class JoveNotesBatch {
     
     public static ConfigManager config = null ;
     public static Database db = null ;
+    
+    private Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler() ;
     
     private JoveNotesBatch( String[] args ) throws Exception {
         initialize( args ) ;
@@ -52,10 +60,25 @@ public class JoveNotesBatch {
     }
     
     private void start() throws Exception {
-        List<PrepRequest> requests = new ChapterPreparednessRequestDBO().getRequests() ;
-        for( PrepRequest req : requests ) {
-            log.debug( req ) ;
+        
+        Map<String, JobConfig> jobConfigs = config.getJobConfigMap() ;
+        for( String jobId : jobConfigs.keySet() ) {
+            JobConfig jobCfg = jobConfigs.get( jobId ) ;
+            
+            JobDetail job = newJob( jobCfg.getJobClass() )
+                            .withIdentity( jobCfg.getJobId() )
+                            .withDescription( jobCfg.getJobId() )
+                            .usingJobData( jobCfg.getDataMap() )
+                            .build() ;
+            
+            Trigger trigger = newTrigger()
+                             .withIdentity( jobId + "Trigger" )
+                             .withSchedule( cronSchedule( jobCfg.getCron() ) )
+                             .build() ;
+            
+            scheduler.scheduleJob( job, trigger ) ;
         }
+        scheduler.start() ;
     }
     
     public static void main( String[] args ) throws Exception {

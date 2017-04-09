@@ -19,3 +19,13 @@ db.user=root
 #            option. If the command line option is specified, it will override 
 #            the value provided in this configuration file.
 #db.password=
+
+# The list of job identifiers. Each job has multiple sub configurations
+# qualified by 'job.<jobId>.' prefix. Mandatory sub configuration keys are
+# class
+#
+# Mandatory - If not specified, the program will exit.
+job.id.list=PreparednessComputeJob
+
+job.PreparednessComputeJob.class=com.sandy.jovenotes.jnbatch.job.preparedness.PreparednessComputeJob
+job.PreparednessComputeJob.cron=0/5 * * * * ?
