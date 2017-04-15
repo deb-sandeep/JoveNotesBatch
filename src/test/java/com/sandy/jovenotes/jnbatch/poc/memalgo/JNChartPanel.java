@@ -8,6 +8,7 @@ import java.util.Hashtable ;
 import java.util.Map ;
 
 import javax.swing.JPanel ;
+import javax.swing.SwingUtilities ;
 
 import org.apache.log4j.Logger ;
 import org.jfree.chart.ChartFactory ;
@@ -115,20 +116,32 @@ public class JNChartPanel extends JPanel
         timeSeries.addOrUpdate( new Second( date ), yValue ) ;
     }
     
-    public void clearTimeSeries() {
+    public void clear() {
+        plot.clearAnnotations() ;
         seriesColl.removeAllSeries() ;
         timeSeriesMap.clear() ;
     }
 
     @Override
-    public void handleRetentionLevelChange( String series, Date date, double level ) {
-        addTimeSeriesPoint( series, date, level ) ;
+    public void handleRetentionLevelChange( final String series, final Date date, 
+                                            final double level ) {
+        SwingUtilities.invokeLater( new Runnable() {
+            public void run() {
+                addTimeSeriesPoint( series, date, level ) ;
+            }
+        } );
     }
     
-    public void addAnnotation( String text, Date date, double level ) {
-        XYTextAnnotation annotation = new XYTextAnnotation( text, date.getTime(), level ) ;
-        annotation.setFont( CHART_LEGEND_FONT ) ;
-        annotation.setPaint( Color.CYAN );
-        plot.addAnnotation( annotation ) ;
+    public void addAnnotation( final String text, final Date date, 
+                               final double level ) {
+        
+        SwingUtilities.invokeLater( new Runnable() {
+            public void run() {
+                XYTextAnnotation a = new XYTextAnnotation( text, date.getTime(), level ) ;
+                a.setFont( CHART_LEGEND_FONT ) ;
+                a.setPaint( Color.CYAN );
+                plot.addAnnotation( a ) ;
+            }
+        } ) ;
     }
 }

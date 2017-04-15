@@ -26,7 +26,7 @@ public class JoveNotesBatch {
     
     private Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler() ;
     
-    private JoveNotesBatch( String[] args ) throws Exception {
+    public JoveNotesBatch( String[] args ) throws Exception {
         initialize( args ) ;
     }
     

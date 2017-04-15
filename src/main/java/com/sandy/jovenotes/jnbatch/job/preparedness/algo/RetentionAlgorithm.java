@@ -8,8 +8,8 @@ import static com.sandy.jovenotes.jnbatch.util.CardType.QA ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.SPELLBEE ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.TF ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.VOICE2TEXT ;
-
-import static java.lang.Math.* ;
+import static java.lang.Math.exp ;
+import static java.lang.Math.pow ;
 
 import java.util.ArrayList ;
 import java.util.Date ;
@@ -33,15 +33,22 @@ public class RetentionAlgorithm {
     private static Map<String, long[]> retentionPeriods = new HashMap<>() ;
 
     static {
-        retentionPeriods.put( QA          , toSeconds( new long[]{ 1, 2, 4,  8, 16, 32 } ) ) ;
-        retentionPeriods.put( FIB         , toSeconds( new long[]{ 2, 4, 8, 18, 40, 60 } ) ) ;
-        retentionPeriods.put( TF          , toSeconds( new long[]{ 2, 4, 8, 16, 35, 70 } ) ) ;
-        retentionPeriods.put( MATCHING    , toSeconds( new long[]{ 1, 2, 5, 10, 20, 40 } ) ) ;
-        retentionPeriods.put( IMGLABEL    , toSeconds( new long[]{ 1, 1, 4,  8, 16, 32 } ) ) ;
-        retentionPeriods.put( SPELLBEE    , toSeconds( new long[]{ 1, 3, 6, 12, 30, 50 } ) ) ;
-        retentionPeriods.put( MULTI_CHOICE, toSeconds( new long[]{ 1, 3, 6, 12, 30, 50 } ) ) ;
-        retentionPeriods.put( VOICE2TEXT  , toSeconds( new long[]{ 1, 3, 6, 12, 30, 50 } ) ) ;
+        retentionPeriods.put( IMGLABEL    , toSeconds( new long[]{ 1, 2,  4,  8, 16, 32 } ) ) ;
+        retentionPeriods.put( QA          , toSeconds( new long[]{ 1, 2,  4,  8, 16, 32 } ) ) ;
+        retentionPeriods.put( VOICE2TEXT  , toSeconds( new long[]{ 1, 3,  6, 12, 30, 50 } ) ) ;
+        retentionPeriods.put( MATCHING    , toSeconds( new long[]{ 2, 4,  8, 10, 20, 40 } ) ) ;
+        retentionPeriods.put( FIB         , toSeconds( new long[]{ 3, 7, 14, 35, 40, 60 } ) ) ;
+        retentionPeriods.put( SPELLBEE    , toSeconds( new long[]{ 4, 8, 20, 45, 50, 70 } ) ) ;
+        retentionPeriods.put( MULTI_CHOICE, toSeconds( new long[]{ 5, 8, 20, 45, 50, 70 } ) ) ;
+        retentionPeriods.put( TF          , toSeconds( new long[]{ 5,10, 25, 50, 60, 70 } ) ) ;
     }
+    
+    private static long[][] QA_RET = {
+        toSeconds( new long[]{ 4,10, 20, 45, 50, 70 } ),
+        toSeconds( new long[]{ 4, 7, 16, 35, 40, 65 } ),
+        toSeconds( new long[]{ 3, 6, 14, 30, 35, 60 } ),
+        toSeconds( new long[]{ 2, 4,  8, 16, 30, 50 } ),
+    } ;
     
     private static long[] toSeconds( long[] days ) {
         for( int i=0; i<days.length; i++ ) {
@@ -58,9 +65,18 @@ public class RetentionAlgorithm {
             new ArrayList<RetentionAlgorithmListener>() ;
     
     private List<CardRating> ratings = new ArrayList<>() ;
+    private Card card = null ;
+    
+    public RetentionAlgorithm() {
+    }
     
     public RetentionAlgorithm( Card card ) {
-        
+        setCard( card ) ;
+    }
+    
+    public void setCard( Card card ) {
+        this.card = card ;
+        this.ratings.clear() ;
         this.ratings.addAll( card.getRatings() ) ;
         filterNonContributingAttempts() ;
     }
@@ -82,6 +98,10 @@ public class RetentionAlgorithm {
         this.listeners.add( listener ) ;
     }
     
+    public void clearListeners() {
+        this.listeners.clear() ;
+    }
+    
     /**
      * Given a card type and an associated level, this method looks up the
      * retention period.
@@ -92,14 +112,20 @@ public class RetentionAlgorithm {
      * 
      * These values are heuristically computed and burnt into a static matrix.
      */
-    private long getAbsRetentionPeriod( String cardType, Level level ) {
+    private long getAbsRetentionPeriod( Card card, Level level ) {
         if( level.getLevel() == -1 ) {
             // If we are at the NS level, there is no concept of retention
             // since the card has never been attempted before. Hence we 
             // return a 0
             return 0 ;
         }
-        return retentionPeriods.get( cardType )[level.getLevel()] ;
+        else if( card.getCardType().equals( QA ) && 
+                 card.getDifficulty() < 40 ) {
+            int index = card.getDifficulty() / 10 ;
+            return QA_RET[index][level.getLevel()] ;
+        }
+        
+        return retentionPeriods.get( card.getCardType() )[level.getLevel()] ;
     }
     
     /**
@@ -110,21 +136,33 @@ public class RetentionAlgorithm {
      * @return A value which is always between the current retention value
      *         and 0. Retention value turns to 0 exponentially with time.
      */
-    private double getProjectedRetentionValue( String cardType, Level level, 
+    private double getProjectedRetentionValue( Card card, Level level, 
                                                double startRetVal, long numSecs ) {
         
-        long absRetPeriod = getAbsRetentionPeriod( cardType, level ) ;
+        long absRetPeriod = getAbsRetentionPeriod( card, level ) ;
         double retSlope  = -((double)(absRetPeriod))/RET_K ;
         
         return startRetVal*Math.exp( -(numSecs/retSlope ) ) ;
     }
     
     public double getCurrentRetentionValue() {
+        if( card == null ) {
+            throw new IllegalStateException( "Card not set." ) ;
+        }
+        else if( ratings.isEmpty() ) {
+            return 0 ;
+        }
         return compute( false ) ;
     }
     
     public void projectRetentionTrajectory() {
-        compute( true ) ;
+        if( card == null ) {
+            throw new IllegalStateException( "Card not set." ) ;
+        }
+        
+        if( !ratings.isEmpty() ) {
+            compute( true ) ;
+        }
     }
     
     private double compute( boolean projectTrajectory ) {
@@ -152,7 +190,7 @@ public class RetentionAlgorithm {
                 double boostMultiplier = 1.0 ;
                 
                 expectedRetentionVal = getProjectedRetentionValue( 
-                                                    r.getCard().getCardType(), 
+                                                    r.getCard(), 
                                                     level,
                                                     retentionVal, 
                                                     elapsedTime ) ;
@@ -174,7 +212,7 @@ public class RetentionAlgorithm {
         }
         
         elapsedTime = delta( new Date(), r.getDate() ) ;
-        retentionVal = getProjectedRetentionValue( r.getCard().getCardType(),
+        retentionVal = getProjectedRetentionValue( r.getCard(),
                                                    level,
                                                    retentionVal, 
                                                    elapsedTime ) ;
@@ -192,10 +230,8 @@ public class RetentionAlgorithm {
         
         CardRating r = null ;
         CardRating nextRating = null ;
-        String     cardType = null ;
         
         r = ratings.get( curRatingIndex ) ;
-        cardType = r.getCard().getCardType() ;
         
         if( curRatingIndex<ratings.size()-1 ) {
             nextRating = ratings.get( curRatingIndex+1 ) ;
@@ -203,12 +239,13 @@ public class RetentionAlgorithm {
         
         publishAnnotation( "" + r.getRating(), r.getDate(), initialRetVal ) ;
         
+        Date   now    = new Date() ;
         Date   date   = DateUtils.addSeconds( r.getDate(), 1 ) ;
-        double retVal = getProjectedRetentionValue( r.getCard().getCardType(), 
+        double retVal = getProjectedRetentionValue( r.getCard(), 
                                                     level, initialRetVal,
                                                     delta( date, r.getDate() )) ;
         
-        while( retVal > 0.01 ) {
+        while( true ) {
             
             if( nextRating != null ) {
                 if( date.after( nextRating.getDate() ) ) {
@@ -218,15 +255,18 @@ public class RetentionAlgorithm {
             else if( retVal < 35 ) {
                 break ;
             }
+            else if( date.after( now ) ) {
+                break ;
+            }
             
             publishOutput( "Forecast", date, retVal ) ; 
             
-            date =  DateUtils.addHours( date, 1 ) ;
-            retVal = getProjectedRetentionValue( cardType, level, 
+            date =  DateUtils.addHours( date, 6 ) ;
+            retVal = getProjectedRetentionValue( r.getCard(), level, 
                                                  initialRetVal, 
                                                  delta( date, r.getDate() ) ) ;
             
-            try { Thread.sleep( 10 ) ; } catch( Exception e ) {}
+            try { Thread.sleep( 5 ) ; } catch( Exception e ) {}
         }
         
         return date ;

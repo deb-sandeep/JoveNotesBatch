@@ -18,6 +18,7 @@ public class ChapterDBO extends AbstractDBO {
             "select " +
             "    c.card_id, " +
             "    c.card_type, " +
+            "    c.difficulty_level, " +
             "    cr.timestamp, " +
             "    cr.rating, " +
             "    cr.score, " +
@@ -61,6 +62,7 @@ public class ChapterDBO extends AbstractDBO {
         
         int    cardId    = rs.getInt    ( "card_id"    ) ;
         String cardType  = rs.getString ( "card_type"  ) ;
+        int    difficulty= rs.getInt    ( "difficulty_level" ) ;
         Date   date      = rs.getDate   ( "timestamp"  ) ;
         char   rating    = rs.getString ( "rating"     ).charAt( 0 ) ;
         int    score     = rs.getInt    ( "score"      ) ;
@@ -68,7 +70,7 @@ public class ChapterDBO extends AbstractDBO {
 
         Card card = chapter.getCard( cardId ) ;
         if( card == null ) {
-            card = new Card( chapter, cardId, cardType ) ;
+            card = new Card( chapter, cardId, cardType, difficulty ) ;
             chapter.addCard( card ) ;
         }
         

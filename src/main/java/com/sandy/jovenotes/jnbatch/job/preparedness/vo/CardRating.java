@@ -2,10 +2,6 @@ package com.sandy.jovenotes.jnbatch.job.preparedness.vo;
 
 import java.util.Date ;
 
-import org.apache.commons.lang.StringUtils ;
-
-import com.sandy.jovenotes.jnbatch.poc.memalgo.MemoryRetentionAlgoPOC ;
-
 public class CardRating {
 
     private Date   date                = null ;
@@ -62,15 +58,5 @@ public class CardRating {
     
     public long getSecsSincePrevRating() {
         return this.secsSincePrevRating ;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder() ;
-        builder.append( StringUtils.rightPad( MemoryRetentionAlgoPOC.SDF.format( date ), 20 ) )
-               .append( StringUtils.rightPad( "" + rating, 4 ) )
-               .append( StringUtils.rightPad( "" + score, 4 ) )
-               .append( StringUtils.rightPad( "" + secsSincePrevRating/3600, 10 ) ) ;
-        return builder.toString() ;
     }
 }
