@@ -21,11 +21,13 @@ import java.util.Map ;
 import org.apache.commons.lang.time.DateUtils ;
 import org.apache.log4j.Logger ;
 
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Card ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.CardRating ;
 import com.sandy.jovenotes.jnbatch.util.CardType ;
 
-public class MemoryRetentionAlgorithm {
+public class RetentionAlgorithm {
 
-    static final Logger log = Logger.getLogger( MemoryRetentionAlgorithm.class ) ;
+    static final Logger log = Logger.getLogger( RetentionAlgorithm.class ) ;
     
     private static double RET_K = Math.log( 0.35 ) ;
     private static Map<String, long[]> retentionPeriods = new HashMap<>() ;
@@ -52,14 +54,14 @@ public class MemoryRetentionAlgorithm {
         return ( d1.getTime() - d2.getTime() )/1000 ;
     }
     
-    private List<MemoryRetentionAlgorithmOutputListener> listeners = 
-            new ArrayList<MemoryRetentionAlgorithmOutputListener>() ;
+    private List<RetentionAlgorithmListener> listeners = 
+            new ArrayList<RetentionAlgorithmListener>() ;
     
-    private List<CardRating> ratings = null ;
+    private List<CardRating> ratings = new ArrayList<>() ;
     
-    public MemoryRetentionAlgorithm( List<CardRating> ratings ) {
+    public RetentionAlgorithm( Card card ) {
         
-        this.ratings = ratings ;
+        this.ratings.addAll( card.getRatings() ) ;
         filterNonContributingAttempts() ;
     }
     
@@ -76,7 +78,7 @@ public class MemoryRetentionAlgorithm {
         }
     }
     
-    public void addListener( MemoryRetentionAlgorithmOutputListener listener ) {
+    public void addListener( RetentionAlgorithmListener listener ) {
         this.listeners.add( listener ) ;
     }
     
@@ -150,10 +152,10 @@ public class MemoryRetentionAlgorithm {
                 double boostMultiplier = 1.0 ;
                 
                 expectedRetentionVal = getProjectedRetentionValue( 
-                                                                r.getCardType(), 
-                                                                level,
-                                                                retentionVal, 
-                                                                elapsedTime ) ;
+                                                    r.getCard().getCardType(), 
+                                                    level,
+                                                    retentionVal, 
+                                                    elapsedTime ) ;
                 if( expectedRetentionVal >= 35 ) {
                     double fall = (double)( expectedRetentionVal-35 ) ;
                     boostMultiplier = exp( -pow( fall, 2 )/( 2*25*25 ) ) ;
@@ -172,7 +174,7 @@ public class MemoryRetentionAlgorithm {
         }
         
         elapsedTime = delta( new Date(), r.getDate() ) ;
-        retentionVal = getProjectedRetentionValue( r.getCardType(),
+        retentionVal = getProjectedRetentionValue( r.getCard().getCardType(),
                                                    level,
                                                    retentionVal, 
                                                    elapsedTime ) ;
@@ -193,7 +195,7 @@ public class MemoryRetentionAlgorithm {
         String     cardType = null ;
         
         r = ratings.get( curRatingIndex ) ;
-        cardType = r.getCardType() ;
+        cardType = r.getCard().getCardType() ;
         
         if( curRatingIndex<ratings.size()-1 ) {
             nextRating = ratings.get( curRatingIndex+1 ) ;
@@ -202,8 +204,8 @@ public class MemoryRetentionAlgorithm {
         publishAnnotation( "" + r.getRating(), r.getDate(), initialRetVal ) ;
         
         Date   date   = DateUtils.addSeconds( r.getDate(), 1 ) ;
-        double retVal = getProjectedRetentionValue( r.getCardType(), level, 
-                                                    initialRetVal, 
+        double retVal = getProjectedRetentionValue( r.getCard().getCardType(), 
+                                                    level, initialRetVal,
                                                     delta( date, r.getDate() )) ;
         
         while( retVal > 0.01 ) {
@@ -231,13 +233,13 @@ public class MemoryRetentionAlgorithm {
     }
     
     private void publishOutput( String series, Date date, double rating ) {
-        for( MemoryRetentionAlgorithmOutputListener l : listeners ) {
+        for( RetentionAlgorithmListener l : listeners ) {
             l.handleRetentionLevelChange( series, date, rating ) ;
         }
     }
     
     private void publishAnnotation( String text, Date date, double rating ) {
-        for( MemoryRetentionAlgorithmOutputListener l : listeners ) {
+        for( RetentionAlgorithmListener l : listeners ) {
             l.addAnnotation( text, date, rating ) ;
         }
     }

@@ -1,16 +1,36 @@
-package com.sandy.jovenotes.jnbatch.job.preparedness ;
+package com.sandy.jovenotes.jnbatch.job.preparedness.vo ;
 
+import java.util.ArrayList ;
 import java.util.Date ;
+import java.util.HashMap ;
+import java.util.List ;
+import java.util.Map ;
 
 import org.apache.commons.lang.StringUtils ;
 
-public class PrepRequest {
+public class Chapter {
 
     private String  studentName  = null ;
     private int     chapterId    = -1 ;
     private String  subjectName  = null ;
     private boolean isInSyllabus = false ;
     private Date    examDate     = null ;
+    
+    private Map<Integer, Card> cardMap = new HashMap<Integer, Card>() ;
+    private List<Card>         cards   = new ArrayList<Card>() ;
+    
+    public void addCard( Card card ) {
+        cards.add( card ) ;
+        cardMap.put( card.getCardId(), card ) ;
+    }
+    
+    public List<Card> getCards() {
+        return cards ;
+    }
+    
+    public Card getCard( int id ) {
+        return cardMap.get( id ) ;
+    }
     
     public String getStudentName() {
         return studentName ;

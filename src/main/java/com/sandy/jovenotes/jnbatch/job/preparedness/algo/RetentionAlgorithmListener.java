@@ -2,7 +2,7 @@ package com.sandy.jovenotes.jnbatch.job.preparedness.algo;
 
 import java.util.Date ;
 
-public interface MemoryRetentionAlgorithmOutputListener {
+public interface RetentionAlgorithmListener {
 
     public void handleRetentionLevelChange( String series, Date date, double level ) ;
     

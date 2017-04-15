@@ -1,4 +1,4 @@
-package com.sandy.jovenotes.jnbatch.job.preparedness;
+package com.sandy.jovenotes.jnbatch.config ;
 
 import org.quartz.Job ;
 import org.quartz.JobDataMap ;

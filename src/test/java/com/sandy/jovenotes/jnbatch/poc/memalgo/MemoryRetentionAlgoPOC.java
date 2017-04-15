@@ -3,22 +3,22 @@ package com.sandy.jovenotes.jnbatch.poc.memalgo ;
 import java.awt.BorderLayout ;
 import java.awt.Container ;
 import java.text.SimpleDateFormat ;
-import java.util.ArrayList ;
 import java.util.Date ;
-import java.util.List ;
 
 import javax.swing.JFrame ;
 
 import org.apache.log4j.Logger ;
 
-import com.sandy.jovenotes.jnbatch.job.preparedness.algo.CardRating ;
-import com.sandy.jovenotes.jnbatch.job.preparedness.algo.MemoryRetentionAlgorithm ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.algo.RetentionAlgorithm ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Card ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.CardRating ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 import com.sandy.jovenotes.jnbatch.util.CardType ;
 
 @SuppressWarnings( "serial" )
 public class MemoryRetentionAlgoPOC extends JFrame {
     
-    private static final Logger log = Logger.getLogger( MemoryRetentionAlgoPOC.class ) ;
+    static final Logger log = Logger.getLogger( MemoryRetentionAlgoPOC.class ) ;
     
     private static final String DP = "yyyy-MM-dd HH:mm:ss" ;
     public  static final SimpleDateFormat SDF = new SimpleDateFormat( DP ) ;
@@ -37,9 +37,8 @@ public class MemoryRetentionAlgoPOC extends JFrame {
             { "2016-08-22 21:08:51", "E", "26" , "46"  }
     } ;
     
-    private List<CardRating>         ratings = new ArrayList<CardRating>() ;
     private JNChartPanel             chart   = new JNChartPanel() ;
-    private MemoryRetentionAlgorithm algo    = null ;
+    private RetentionAlgorithm algo    = null ;
 
     public MemoryRetentionAlgoPOC() 
         throws Exception {
@@ -47,14 +46,17 @@ public class MemoryRetentionAlgoPOC extends JFrame {
         super( "Memory retention algorithm POC" ) ;
         setUpUI() ;
         
+        Chapter chapter = new Chapter() ;
+        Card    card    = new Card( chapter, 12345, CardType.FIB ) ;
+        
         CardRating prevRating = null ;
         for( String[] ratingInputs : data ) {
-            CardRating rating = createCardRating( ratingInputs, prevRating ) ;
-            ratings.add( rating ) ;
+            CardRating rating = createCardRating( card, ratingInputs, prevRating ) ;
+            card.addRating( rating ) ;
             prevRating = rating ;
         }
         
-        algo = new MemoryRetentionAlgorithm( ratings ) ;
+        algo = new RetentionAlgorithm( card ) ;
         algo.addListener( chart ) ;
         
         super.setBounds( 0, 0, 1800, 500 );
@@ -69,7 +71,7 @@ public class MemoryRetentionAlgoPOC extends JFrame {
         super.setDefaultCloseOperation( EXIT_ON_CLOSE ) ;
     }
     
-    private CardRating createCardRating( String[] inputs, CardRating prevRating ) 
+    private CardRating createCardRating( Card card, String[] inputs, CardRating prevRating ) 
         throws Exception {
         
         Date date      = SDF.parse( inputs[0] ) ; 
@@ -77,15 +79,7 @@ public class MemoryRetentionAlgoPOC extends JFrame {
         int  score     = Integer.parseInt( inputs[2] ) ;
         int  timeTaken = Integer.parseInt( inputs[3] ) ;
         
-        return new CardRating( CardType.FIB, date, rating, score, timeTaken, prevRating ) ;
-    }
-    
-    public void printRatings() {
-        CardRating rating = ratings.get( ratings.size()-1 ) ;
-        while( rating != null ) {
-            log.debug( rating ) ;
-            rating = rating.getPrevRating() ;
-        }
+        return new CardRating( card, date, rating, score, timeTaken ) ;
     }
     
     public void simulate() {

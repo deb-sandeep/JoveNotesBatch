@@ -21,11 +21,11 @@ import org.jfree.data.time.Second ;
 import org.jfree.data.time.TimeSeries ;
 import org.jfree.data.time.TimeSeriesCollection ;
 
-import com.sandy.jovenotes.jnbatch.job.preparedness.algo.MemoryRetentionAlgorithmOutputListener ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.algo.RetentionAlgorithmListener ;
 
 @SuppressWarnings( "serial" )
 public class JNChartPanel extends JPanel 
-    implements MemoryRetentionAlgorithmOutputListener {
+    implements RetentionAlgorithmListener {
     
     static final Logger log = Logger.getLogger( JNChartPanel.class ) ;
     

@@ -9,11 +9,11 @@ import java.util.HashMap ;
 import java.util.List ;
 import java.util.Map ;
 
-import com.sandy.jovenotes.jnbatch.job.preparedness.PrepRequest ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 
-public class ChapterPreparednessRequestDBO extends AbstractDBO {
+public class PreparednessProcessingRequestDBO extends AbstractDBO {
 
-    public List<PrepRequest> getRequests() 
+    public List<Chapter> getProcessingRequests() 
         throws Exception {
         
         final String queryStr = 
@@ -56,7 +56,7 @@ public class ChapterPreparednessRequestDBO extends AbstractDBO {
             "    cprq.request_time is NOT NULL " +
             ") " ;
         
-        List<PrepRequest> requests = new ArrayList<PrepRequest>() ;
+        List<Chapter> requests = new ArrayList<Chapter>() ;
         Connection c = null ;
         PreparedStatement psmt = null ;
         
@@ -80,10 +80,10 @@ public class ChapterPreparednessRequestDBO extends AbstractDBO {
         return requests ; 
     }
     
-    private PrepRequest createRequest( ResultSet rs ) 
+    private Chapter createRequest( ResultSet rs ) 
         throws Exception {
         
-        PrepRequest req = new PrepRequest() ;
+        Chapter req = new Chapter() ;
         
         req.setStudentName( rs.getString(  "student_name"   ) ) ;
         req.setChapterId  ( rs.getInt(     "chapter_id"     ) ) ;
@@ -93,11 +93,11 @@ public class ChapterPreparednessRequestDBO extends AbstractDBO {
         return req ;
     }
     
-    private void populateExamDates( List<PrepRequest> requests ) 
+    private void populateExamDates( List<Chapter> requests ) 
         throws Exception {
         
         // StudentName ->(*) Subject Name ->(*) Request
-        Map<String, Map<String, List<PrepRequest>>> 
+        Map<String, Map<String, List<Chapter>>> 
         map = organizeRequestsForExamAssociation( requests ) ;
         
         Connection c = null ;
@@ -119,14 +119,14 @@ public class ChapterPreparednessRequestDBO extends AbstractDBO {
                 String subName = rs.getString( "subject"      ) ;
                 Date   date    = rs.getDate  ( "date"         ) ;
                 
-                Map<String, List<PrepRequest>> stuMap = null ;
-                List<PrepRequest> subChapterList = null ;
+                Map<String, List<Chapter>> stuMap = null ;
+                List<Chapter> subChapterList = null ;
                 
                 stuMap = map.get( stuName ) ;
                 if( stuMap != null ) {
                     subChapterList = stuMap.get( subName ) ;
                     if( subChapterList != null ) {
-                        for( PrepRequest req : subChapterList ) {
+                        for( Chapter req : subChapterList ) {
                             req.setExamDate( date ) ;
                         }
                     }
@@ -141,29 +141,29 @@ public class ChapterPreparednessRequestDBO extends AbstractDBO {
     }
     
     // StudentName ->(*) Subject Name ->(*) Request
-    private Map<String, Map<String, List<PrepRequest>>>
-        organizeRequestsForExamAssociation( List<PrepRequest> requests ) {
+    private Map<String, Map<String, List<Chapter>>>
+        organizeRequestsForExamAssociation( List<Chapter> requests ) {
         
-        Map<String, Map<String, List<PrepRequest>>> map = 
-                new HashMap<String, Map<String,List<PrepRequest>>>() ;
+        Map<String, Map<String, List<Chapter>>> map = 
+                new HashMap<String, Map<String,List<Chapter>>>() ;
         
-        Map<String, List<PrepRequest>> stuMap = null ;
-        List<PrepRequest> subChapterList = null ;
+        Map<String, List<Chapter>> stuMap = null ;
+        List<Chapter> subChapterList = null ;
         
-        for( PrepRequest req : requests ) {
+        for( Chapter req : requests ) {
             
             String subName = req.getSubjectName() ;
             String stuName = req.getStudentName() ;
             
             stuMap = map.get( stuName ) ;
             if( stuMap == null ) {
-                stuMap = new HashMap<String, List<PrepRequest>>() ;
+                stuMap = new HashMap<String, List<Chapter>>() ;
                 map.put( stuName, stuMap ) ;
             }
             
             subChapterList = stuMap.get( subName ) ;
             if( subChapterList == null ) {
-                subChapterList = new ArrayList<PrepRequest>() ;
+                subChapterList = new ArrayList<Chapter>() ;
                 stuMap.put( subName, subChapterList ) ;
             }
 

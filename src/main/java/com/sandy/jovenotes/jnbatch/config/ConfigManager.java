@@ -1,4 +1,4 @@
-package com.sandy.jovenotes.jnbatch.util;
+package com.sandy.jovenotes.jnbatch.config;
 
 import java.io.File ;
 import java.net.URL ;
@@ -14,7 +14,7 @@ import org.apache.commons.configuration.PropertiesConfiguration ;
 import org.apache.log4j.Logger ;
 import org.quartz.Job ;
 
-import com.sandy.jovenotes.jnbatch.job.preparedness.JobConfig ;
+import com.sandy.jovenotes.jnbatch.util.StringUtil ;
 
 /**
  * The configuration manager for JoveNotes processor. All the configuration 

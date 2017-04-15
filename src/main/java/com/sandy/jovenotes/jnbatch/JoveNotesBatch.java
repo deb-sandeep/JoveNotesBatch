@@ -13,15 +13,10 @@ import org.quartz.Scheduler ;
 import org.quartz.Trigger ;
 import org.quartz.impl.StdSchedulerFactory ;
 
-import com.sandy.jovenotes.jnbatch.job.preparedness.JobConfig ;
-import com.sandy.jovenotes.jnbatch.util.ConfigManager ;
+import com.sandy.jovenotes.jnbatch.config.ConfigManager ;
+import com.sandy.jovenotes.jnbatch.config.JobConfig ;
 import com.sandy.jovenotes.jnbatch.util.Database ;
 
-/**
- * Main class for the JoveNotes batch application.
- * 
- * @author Sandeep
- */
 public class JoveNotesBatch {
     
     private static final Logger log = Logger.getLogger( JoveNotesBatch.class ) ;

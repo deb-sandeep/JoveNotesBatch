@@ -1,4 +1,4 @@
-package com.sandy.jovenotes.jnbatch.job.preparedness.algo;
+package com.sandy.jovenotes.jnbatch.job.preparedness.vo;
 
 import java.util.Date ;
 
@@ -13,19 +13,19 @@ public class CardRating {
     private int    score               = 0 ;
     private int    timeTaken           = 0 ;
     private long   secsSincePrevRating = 0 ;
-    private String cardType            = null ;
     
+    private Card       card       = null ;
     private CardRating prevRating = null ;
     
-    public CardRating( String cardType, Date time, char rating, int score, 
-                       int timeTaken, CardRating prevRating ) {
+    public CardRating( Card card, Date time, char rating, int score, 
+                       int timeTaken ) {
         
+        this.card      = card ;
         this.date      = time ;
         this.rating    = rating ;
         this.score     = score ;
         this.timeTaken = timeTaken ;
-        this.prevRating= prevRating ;
-        this.cardType  = cardType ;
+        this.prevRating= card.getLastRating() ;
         initialize() ;
     }
     
@@ -36,10 +36,10 @@ public class CardRating {
         }
     }
     
-    public String getCardType() {
-        return this.cardType ;
+    public Card getCard() {
+        return this.card ;
     }
-
+    
     public Date getDate() {
         return date ;
     }

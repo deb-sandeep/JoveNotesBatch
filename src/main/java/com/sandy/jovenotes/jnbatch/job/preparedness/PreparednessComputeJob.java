@@ -12,8 +12,9 @@ import org.quartz.JobDataMap ;
 import org.quartz.JobExecutionContext ;
 import org.quartz.JobExecutionException ;
 
-import com.sandy.jovenotes.jnbatch.dao.ChapterPreparednessRequestDBO ;
-import com.sandy.jovenotes.jnbatch.util.ConfigManager ;
+import com.sandy.jovenotes.jnbatch.config.ConfigManager ;
+import com.sandy.jovenotes.jnbatch.dao.PreparednessProcessingRequestDBO ;
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 
 public class PreparednessComputeJob implements Job {
 
@@ -27,20 +28,20 @@ public class PreparednessComputeJob implements Job {
         
         String jobName = context.getJobDetail().getDescription() ;
         List<ChapterPreparednessComputer> tasks = null ; 
-        ChapterPreparednessRequestDBO dbo = null ;
+        PreparednessProcessingRequestDBO dbo = null ;
         
         log.debug( "Executing " + jobName + "@" + new Date() ) ;
         
         try {
-            dbo = new ChapterPreparednessRequestDBO() ;
-            List<PrepRequest> requests = dbo.getRequests() ;
+            dbo = new PreparednessProcessingRequestDBO() ;
+            List<Chapter> requests = dbo.getProcessingRequests() ;
 
             if( requests != null && !requests.isEmpty() ) {
                 
                 createExecutor( context ) ;
                 tasks = new ArrayList<ChapterPreparednessComputer>() ;
                 
-                for( PrepRequest request : requests ) {
+                for( Chapter request : requests ) {
                     tasks.add( new ChapterPreparednessComputer( request ) ) ;
                 }
                 executor.invokeAll( tasks ) ;

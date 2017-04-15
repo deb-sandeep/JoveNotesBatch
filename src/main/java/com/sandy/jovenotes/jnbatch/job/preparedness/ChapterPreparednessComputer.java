@@ -4,13 +4,15 @@ import java.util.concurrent.Callable ;
 
 import org.apache.log4j.Logger ;
 
+import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
+
 public class ChapterPreparednessComputer implements Callable<Void> {
     
     private static Logger log = Logger.getLogger( ChapterPreparednessComputer.class ) ;
     
-    private PrepRequest request = null ;
+    private Chapter request = null ;
     
-    public ChapterPreparednessComputer( PrepRequest request ) {
+    public ChapterPreparednessComputer( Chapter request ) {
         this.request = request ;
     }
 
