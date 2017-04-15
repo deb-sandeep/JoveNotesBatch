@@ -172,7 +172,7 @@ public class RetentionAlgorithm {
         CardRating r            = null ;
         long       elapsedTime  = 0 ;
         
-        Date       lastTrajectoryDate = null ;
+        Date lastTrajectoryDate = null ;
         
         for( int i=0; i<ratings.size(); i++ ) {
             
@@ -216,11 +216,9 @@ public class RetentionAlgorithm {
                                                    level,
                                                    retentionVal, 
                                                    elapsedTime ) ;
-
         if( projectTrajectory ) {
             publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
         }
-
         return retentionVal ;
     }
     
@@ -244,7 +242,6 @@ public class RetentionAlgorithm {
         double retVal = getProjectedRetentionValue( r.getCard(), 
                                                     level, initialRetVal,
                                                     delta( date, r.getDate() )) ;
-        
         while( true ) {
             
             if( nextRating != null ) {
@@ -265,7 +262,6 @@ public class RetentionAlgorithm {
             retVal = getProjectedRetentionValue( r.getCard(), level, 
                                                  initialRetVal, 
                                                  delta( date, r.getDate() ) ) ;
-            
             try { Thread.sleep( 5 ) ; } catch( Exception e ) {}
         }
         
