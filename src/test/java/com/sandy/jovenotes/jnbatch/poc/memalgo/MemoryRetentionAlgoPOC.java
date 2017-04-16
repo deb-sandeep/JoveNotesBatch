@@ -124,8 +124,7 @@ public class MemoryRetentionAlgoPOC extends JFrame
         typeLbl.setText( curCard.getCardType()   + "  ( " + 
                          curCard.getDifficulty() + " )" ) ;
         
-        algo.setCard( cards.get( curIndex ) ) ;
-        algo.projectRetentionTrajectory() ;
+        algo.projectRetentionTrajectory( curCard ) ;
         
         prevBtn.setEnabled( curIndex > 0 ) ;
         nextBtn.setEnabled( curIndex < cards.size()-1 ) ;

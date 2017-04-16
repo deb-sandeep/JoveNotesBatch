@@ -44,7 +44,7 @@ public class PreparednessProcessingRequestDBO extends AbstractDBO {
             "    and " +
             "    ( " +
             "        cp.last_computed_time is NULL or " +
-            "        TIMESTAMPDIFF(HOUR, cp.last_computed_time, CURRENT_TIMESTAMP) > 5 " +
+            "        TIMESTAMPDIFF(HOUR, cp.last_computed_time, CURRENT_TIMESTAMP) > 6 " +
             "    ) " +
             "    and " +
             "    ( " +

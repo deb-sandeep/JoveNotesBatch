@@ -64,42 +64,159 @@ public class RetentionAlgorithm {
     private List<RetentionAlgorithmListener> listeners = 
             new ArrayList<RetentionAlgorithmListener>() ;
     
-    private List<CardRating> ratings = new ArrayList<>() ;
-    private Card card = null ;
-    
-    public RetentionAlgorithm() {
-    }
-    
-    public RetentionAlgorithm( Card card ) {
-        setCard( card ) ;
-    }
-    
-    public void setCard( Card card ) {
-        this.card = card ;
-        this.ratings.clear() ;
-        this.ratings.addAll( card.getRatings() ) ;
-        filterNonContributingAttempts() ;
-    }
-    
-    // If we have a zero score and zero time, it implies we are dealing
-    // either with an APMNS card or a repetition of the card in the 
-    // same session. In either case, these attempts don't contribute
-    // towards retention projection, ergo, we remove them.
-    private void filterNonContributingAttempts() {
-        for( Iterator<CardRating> iter = ratings.iterator(); iter.hasNext(); ) {
-            CardRating r = iter.next() ;
-            if( r.getScore() == 0 || r.getTimeTaken() == 0 ) {
-                iter.remove() ;
-            }
-        }
-    }
-    
     public void addListener( RetentionAlgorithmListener listener ) {
         this.listeners.add( listener ) ;
     }
     
     public void clearListeners() {
         this.listeners.clear() ;
+    }
+    
+    public double getCurrentRetentionValue( Card card ) {
+        if( card == null ) {
+            throw new IllegalStateException( "Card not set." ) ;
+        }
+        else if( card.getRatings().isEmpty() ) {
+            return 0 ;
+        }
+        card.setCurrentRetentionValue( compute( card, false ) ) ;
+        return card.getCurrentRetentionValue() ;
+    }
+    
+    public void projectRetentionTrajectory( Card card ) {
+        if( card == null ) {
+            throw new IllegalStateException( "Card not set." ) ;
+        }
+        
+        if( !card.getRatings().isEmpty() ) {
+            compute( card, true ) ;
+        }
+    }
+    
+    private double compute( Card card, boolean projectTrajectory ) {
+        
+        double     retentionVal = 0 ;
+        Level      level        = Level.NS ;
+        CardRating r            = null ;
+        long       elapsedTime  = 0 ;
+        
+        Date             lastTrajectoryDate = null ;
+        List<CardRating> ratings            = null ;
+        
+        ratings = filterNonContributingAttempts( card ) ;
+        
+        for( int i=0; i<ratings.size(); i++ ) {
+            
+            r = ratings.get( i ) ;
+            
+            if( i==0 ) {
+                // If this is the first attempt the retention boost is 1 and
+                // hence the retention score is 100.
+                retentionVal = 100 ;
+            }
+            else {
+                
+                elapsedTime = r.getSecsSincePrevRating() ;
+                double expectedRetentionVal = 0 ;
+                double boostMultiplier = 1.0 ;
+                
+                expectedRetentionVal = getProjectedRetentionValue( 
+                                                    r.getCard(), 
+                                                    level,
+                                                    retentionVal, 
+                                                    elapsedTime ) ;
+                if( expectedRetentionVal >= 35 ) {
+                    double fall = (double)( expectedRetentionVal-35 ) ;
+                    boostMultiplier = exp( -pow( fall, 2 )/( 2*25*25 ) ) ;
+                }
+                
+                double boost = (100-expectedRetentionVal)*boostMultiplier ;
+                retentionVal = expectedRetentionVal + boost ;
+            }
+            
+            level = level.getNextLevel( r.getRating() ) ;
+            
+            if( projectTrajectory ) {
+                lastTrajectoryDate = publishProjectedTrajectory( 
+                                                      i, retentionVal, 
+                                                      level, ratings ) ;
+            }
+        }
+        
+        elapsedTime = delta( new Date(), r.getDate() ) ;
+        retentionVal = getProjectedRetentionValue( r.getCard(),
+                                                   level,
+                                                   retentionVal, 
+                                                   elapsedTime ) ;
+        if( projectTrajectory ) {
+            publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
+        }
+        return retentionVal ;
+    }
+    
+    // If we have a zero score and zero time, it implies we are dealing
+    // either with an APMNS card or a repetition of the card in the 
+    // same session. In either case, these attempts don't contribute
+    // towards retention projection, ergo, we remove them.
+    private List<CardRating> filterNonContributingAttempts( Card card ) {
+        
+        List<CardRating> ratings = new ArrayList<>() ;
+        ratings.addAll( card.getRatings() ) ;
+        
+        for( Iterator<CardRating> iter = ratings.iterator(); iter.hasNext(); ) {
+            CardRating r = iter.next() ;
+            if( r.getScore() == 0 || r.getTimeTaken() == 0 ) {
+                iter.remove() ;
+            }
+        }
+        return ratings ;
+    }
+    
+    private Date publishProjectedTrajectory( int curRatingIndex, 
+                                             double initialRetVal, 
+                                             Level level,
+                                             List<CardRating> ratings ) {
+        
+        CardRating r = null ;
+        CardRating nextRating = null ;
+        
+        r = ratings.get( curRatingIndex ) ;
+        
+        if( curRatingIndex<ratings.size()-1 ) {
+            nextRating = ratings.get( curRatingIndex+1 ) ;
+        }
+        
+        publishAnnotation( "" + r.getRating(), r.getDate(), initialRetVal ) ;
+        
+        Date   now    = new Date() ;
+        Date   date   = DateUtils.addSeconds( r.getDate(), 1 ) ;
+        double retVal = getProjectedRetentionValue( r.getCard(), 
+                                                    level, initialRetVal,
+                                                    delta( date, r.getDate() )) ;
+        while( true ) {
+            
+            if( nextRating != null ) {
+                if( date.after( nextRating.getDate() ) ) {
+                    break ;
+                }
+            }
+            else if( retVal < 35 ) {
+                break ;
+            }
+            else if( date.after( now ) ) {
+                break ;
+            }
+            
+            publishOutput( "Forecast", date, retVal ) ; 
+            
+            date =  DateUtils.addHours( date, 6 ) ;
+            retVal = getProjectedRetentionValue( r.getCard(), level, 
+                                                 initialRetVal, 
+                                                 delta( date, r.getDate() ) ) ;
+            try { Thread.sleep( 5 ) ; } catch( Exception e ) {}
+        }
+        
+        return date ;
     }
     
     /**
@@ -143,129 +260,6 @@ public class RetentionAlgorithm {
         double retSlope  = -((double)(absRetPeriod))/RET_K ;
         
         return startRetVal*Math.exp( -(numSecs/retSlope ) ) ;
-    }
-    
-    public double getCurrentRetentionValue() {
-        if( card == null ) {
-            throw new IllegalStateException( "Card not set." ) ;
-        }
-        else if( ratings.isEmpty() ) {
-            return 0 ;
-        }
-        return compute( false ) ;
-    }
-    
-    public void projectRetentionTrajectory() {
-        if( card == null ) {
-            throw new IllegalStateException( "Card not set." ) ;
-        }
-        
-        if( !ratings.isEmpty() ) {
-            compute( true ) ;
-        }
-    }
-    
-    private double compute( boolean projectTrajectory ) {
-        
-        double     retentionVal = 0 ;
-        Level      level        = Level.NS ;
-        CardRating r            = null ;
-        long       elapsedTime  = 0 ;
-        
-        Date lastTrajectoryDate = null ;
-        
-        for( int i=0; i<ratings.size(); i++ ) {
-            
-            r = ratings.get( i ) ;
-            
-            if( i==0 ) {
-                // If this is the first attempt the retention boost is 1 and
-                // hence the retention score is 100.
-                retentionVal = 100 ;
-            }
-            else {
-                
-                elapsedTime = r.getSecsSincePrevRating() ;
-                double expectedRetentionVal = 0 ;
-                double boostMultiplier = 1.0 ;
-                
-                expectedRetentionVal = getProjectedRetentionValue( 
-                                                    r.getCard(), 
-                                                    level,
-                                                    retentionVal, 
-                                                    elapsedTime ) ;
-                if( expectedRetentionVal >= 35 ) {
-                    double fall = (double)( expectedRetentionVal-35 ) ;
-                    boostMultiplier = exp( -pow( fall, 2 )/( 2*25*25 ) ) ;
-                }
-                
-                double boost = (100-expectedRetentionVal)*boostMultiplier ;
-                retentionVal = expectedRetentionVal + boost ;
-            }
-            
-            level = level.getNextLevel( r.getRating() ) ;
-            
-            if( projectTrajectory ) {
-                lastTrajectoryDate = publishProjectedTrajectory( 
-                                                      i, retentionVal, level ) ;
-            }
-        }
-        
-        elapsedTime = delta( new Date(), r.getDate() ) ;
-        retentionVal = getProjectedRetentionValue( r.getCard(),
-                                                   level,
-                                                   retentionVal, 
-                                                   elapsedTime ) ;
-        if( projectTrajectory ) {
-            publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
-        }
-        return retentionVal ;
-    }
-    
-    private Date publishProjectedTrajectory( int curRatingIndex, 
-                                             double initialRetVal, 
-                                             Level level ) {
-        
-        CardRating r = null ;
-        CardRating nextRating = null ;
-        
-        r = ratings.get( curRatingIndex ) ;
-        
-        if( curRatingIndex<ratings.size()-1 ) {
-            nextRating = ratings.get( curRatingIndex+1 ) ;
-        }
-        
-        publishAnnotation( "" + r.getRating(), r.getDate(), initialRetVal ) ;
-        
-        Date   now    = new Date() ;
-        Date   date   = DateUtils.addSeconds( r.getDate(), 1 ) ;
-        double retVal = getProjectedRetentionValue( r.getCard(), 
-                                                    level, initialRetVal,
-                                                    delta( date, r.getDate() )) ;
-        while( true ) {
-            
-            if( nextRating != null ) {
-                if( date.after( nextRating.getDate() ) ) {
-                    break ;
-                }
-            }
-            else if( retVal < 35 ) {
-                break ;
-            }
-            else if( date.after( now ) ) {
-                break ;
-            }
-            
-            publishOutput( "Forecast", date, retVal ) ; 
-            
-            date =  DateUtils.addHours( date, 6 ) ;
-            retVal = getProjectedRetentionValue( r.getCard(), level, 
-                                                 initialRetVal, 
-                                                 delta( date, r.getDate() ) ) ;
-            try { Thread.sleep( 5 ) ; } catch( Exception e ) {}
-        }
-        
-        return date ;
     }
     
     private void publishOutput( String series, Date date, double rating ) {
