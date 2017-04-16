@@ -107,7 +107,9 @@ public class PreparednessProcessingRequestDBO extends AbstractDBO {
             "select student_name, subject, date " +
             "from jove_notes.calendar_event " +
             "where " +
-            "    type=\"Exam\"" ;
+            "    type=\"Exam\" " +
+            "order by " +
+            "    date asc" ;
         
         try {
             c = super.getConnection() ;
@@ -127,7 +129,14 @@ public class PreparednessProcessingRequestDBO extends AbstractDBO {
                     subChapterList = stuMap.get( subName ) ;
                     if( subChapterList != null ) {
                         for( Chapter req : subChapterList ) {
-                            req.setExamDate( date ) ;
+                            if( req.getExamDate() == null ) {
+                                // Why the null check? If we have two exams
+                                // for the same subject marked in the calendar
+                                // we pick up the first one.
+                                // Prepare for the class test first before
+                                // preparing for the terminals.
+                                req.setExamDate( date ) ;
+                            }
                         }
                     }
                 }
