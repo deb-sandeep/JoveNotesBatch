@@ -5,6 +5,7 @@ import java.awt.Container ;
 import java.awt.FlowLayout ;
 import java.awt.event.ActionEvent ;
 import java.awt.event.ActionListener ;
+import java.util.Calendar ;
 import java.util.List ;
 
 import javax.swing.Box ;
@@ -53,9 +54,13 @@ public class MemoryRetentionAlgoPOC extends JFrame
     private void createAndPopulateChapter() 
         throws Exception {
         
+        Calendar examDt = Calendar.getInstance() ;
+        examDt.set( 2017, Calendar.MAY, 9 ) ;
+        
         chapter = new Chapter() ;
         chapter.setChapterId( 650 ) ;
         chapter.setStudentName( "Deba" ) ;
+        chapter.setExamDate( examDt.getTime() );
         
         ChapterDBO dbo = new ChapterDBO() ;
         dbo.populateCardDetails( chapter ) ;
@@ -128,6 +133,10 @@ public class MemoryRetentionAlgoPOC extends JFrame
         
         prevBtn.setEnabled( curIndex > 0 ) ;
         nextBtn.setEnabled( curIndex < cards.size()-1 ) ;
+        
+        Card card = cards.get( curIndex ) ;
+        algo.getExamPreparedness( card ) ;
+        log.debug( card.getExamPreparedness() );
         
         try{ Thread.sleep( 1000 ); }catch( Exception e ){}
         if( curIndex < cards.size()-1 ) {

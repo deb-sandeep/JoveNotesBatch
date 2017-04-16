@@ -10,6 +10,7 @@ import static com.sandy.jovenotes.jnbatch.util.CardType.TF ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.VOICE2TEXT ;
 import static java.lang.Math.exp ;
 import static java.lang.Math.pow ;
+import static java.lang.Math.log ;
 
 import java.util.ArrayList ;
 import java.util.Date ;
@@ -72,6 +73,17 @@ public class RetentionAlgorithm {
         this.listeners.clear() ;
     }
     
+    public double getExamPreparedness( Card card ) {
+        // Go through the current retention value computation as the 
+        // retention value and level would be required in the computation
+        // later, even if there is no exam looming in the future.
+        getCurrentRetentionValue( card ) ;
+        
+        double preparedness = computeExamPreparedness( card ) ;
+        card.setExamPreparedness( preparedness ) ;
+        return preparedness ;
+    }
+    
     public double getCurrentRetentionValue( Card card ) {
         if( card == null ) {
             throw new IllegalStateException( "Card not set." ) ;
@@ -79,7 +91,7 @@ public class RetentionAlgorithm {
         else if( card.getRatings().isEmpty() ) {
             return 0 ;
         }
-        card.setCurrentRetentionValue( compute( card, false ) ) ;
+        compute( card, false ) ;
         return card.getCurrentRetentionValue() ;
     }
     
@@ -115,23 +127,16 @@ public class RetentionAlgorithm {
                 retentionVal = 100 ;
             }
             else {
-                
                 elapsedTime = r.getSecsSincePrevRating() ;
                 double expectedRetentionVal = 0 ;
-                double boostMultiplier = 1.0 ;
                 
                 expectedRetentionVal = getProjectedRetentionValue( 
                                                     r.getCard(), 
                                                     level,
                                                     retentionVal, 
                                                     elapsedTime ) ;
-                if( expectedRetentionVal >= 35 ) {
-                    double fall = (double)( expectedRetentionVal-35 ) ;
-                    boostMultiplier = exp( -pow( fall, 2 )/( 2*25*25 ) ) ;
-                }
-                
-                double boost = (100-expectedRetentionVal)*boostMultiplier ;
-                retentionVal = expectedRetentionVal + boost ;
+                retentionVal = expectedRetentionVal + 
+                               getBoost( expectedRetentionVal ) ;
             }
             
             level = level.getNextLevel( r.getRating() ) ;
@@ -151,7 +156,23 @@ public class RetentionAlgorithm {
         if( projectTrajectory ) {
             publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
         }
+        
+        card.setProficiencyLevel( level ) ;
+        card.setCurrentRetentionValue( retentionVal ) ;
+        
         return retentionVal ;
+    }
+    
+    private double getBoost( double retentionValue ) {
+        return ( 100-retentionValue )*getBoostMultiplier( retentionValue ) ;
+    }
+    
+    private double getBoostMultiplier( double retentionValue ) {
+        if( retentionValue >= 35 ) {
+            double fall = (double)( retentionValue-35 ) ;
+            return exp( -pow( fall, 2 )/( 2*25*25 ) ) ;
+        }
+        return 1.0 ;
     }
     
     // If we have a zero score and zero time, it implies we are dealing
@@ -177,22 +198,24 @@ public class RetentionAlgorithm {
                                              Level level,
                                              List<CardRating> ratings ) {
         
-        CardRating r = null ;
+        CardRating currentRating = null ;
         CardRating nextRating = null ;
         
-        r = ratings.get( curRatingIndex ) ;
+        currentRating = ratings.get( curRatingIndex ) ;
         
         if( curRatingIndex<ratings.size()-1 ) {
             nextRating = ratings.get( curRatingIndex+1 ) ;
         }
         
-        publishAnnotation( "" + r.getRating(), r.getDate(), initialRetVal ) ;
+        publishAnnotation( "" + currentRating.getRating() + " " + level.getLevel(), 
+                           currentRating.getDate(), initialRetVal ) ;
         
         Date   now    = new Date() ;
-        Date   date   = DateUtils.addSeconds( r.getDate(), 1 ) ;
-        double retVal = getProjectedRetentionValue( r.getCard(), 
-                                                    level, initialRetVal,
-                                                    delta( date, r.getDate() )) ;
+        Date   date   = DateUtils.addSeconds( currentRating.getDate(), 1 ) ;
+        double retVal = getProjectedRetentionValue( 
+                                        currentRating.getCard(), 
+                                        level, initialRetVal,
+                                        delta( date, currentRating.getDate() )) ;
         while( true ) {
             
             if( nextRating != null ) {
@@ -210,13 +233,78 @@ public class RetentionAlgorithm {
             publishOutput( "Forecast", date, retVal ) ; 
             
             date =  DateUtils.addHours( date, 6 ) ;
-            retVal = getProjectedRetentionValue( r.getCard(), level, 
-                                                 initialRetVal, 
-                                                 delta( date, r.getDate() ) ) ;
-            try { Thread.sleep( 5 ) ; } catch( Exception e ) {}
+            retVal = getProjectedRetentionValue( 
+                                    currentRating.getCard(), 
+                                    level, 
+                                    initialRetVal, 
+                                    delta( date, currentRating.getDate() ) ) ;
+            
+            try { Thread.sleep( 2 ) ; } catch( Exception e ) {}
         }
         
         return date ;
+    }
+
+    private double computeExamPreparedness( Card card ) {
+        
+        Date examDate = card.getChapter().getExamDate() ;
+        if( examDate == null ) {
+            // We are ready for the exam, if there is no exam - zen of education!
+            return 100 ; 
+        }
+        
+        // boundary condition - if the exam is in the past, it's not relevant
+        // This is a six sigma event and is put for any mis-alignment between
+        // the database time and VM time.
+        Date now = new Date() ;
+        long secondsTillExam = (examDate.getTime() - now.getTime())/1000 ;
+        if( secondsTillExam <= 0 ) {
+            return 100 ;
+        }
+        
+        Level  level = card.getProficiencyLevel() ;
+        double curRetentionVal = card.getCurrentRetentionValue() ;
+        
+        return forecastExamPreparedness( card, level, 
+                                         curRetentionVal,
+                                         examDate, now,
+                                         level ) ;
+    }
+    
+    private double forecastExamPreparedness( Card card, Level level,
+                                             double startRetentionLevel,
+                                             Date examDate, Date now,
+                                             Level levelToday ) {
+        long   leadDelta           = 0 ;
+        double retentionAtExamDate = 0 ;
+        long   secondsTillExam     = 0 ;
+        
+        if( startRetentionLevel > 35 ) {
+            leadDelta = getTimeToTargetRetention( card, level, 
+                                                  startRetentionLevel, 35 ) ;
+        }
+
+        secondsTillExam = (examDate.getTime() - now.getTime())/1000 ;
+        if( leadDelta < secondsTillExam ) {
+            
+            Date  nextAttemptDate = DateUtils.addSeconds( now, (int)leadDelta ) ;
+            Level nextLevel       = level.getNextLevel( 'E' ) ;
+            
+            return forecastExamPreparedness( card, nextLevel, 100, 
+                                             examDate, nextAttemptDate,
+                                             levelToday ) ;
+        }
+        else {
+            retentionAtExamDate = getProjectedRetentionValue( card, level, 
+                                                              startRetentionLevel, 
+                                                              secondsTillExam ) ;
+            int    le = level.getLevel() ;
+            int    lt = levelToday.getLevel() ;
+            double re = retentionAtExamDate ;
+            
+            double prep = ((re * (lt*2+le))/(100*15))*100 ;
+            return prep ;
+        }
     }
     
     /**
@@ -236,13 +324,17 @@ public class RetentionAlgorithm {
             // return a 0
             return 0 ;
         }
-        else if( card.getCardType().equals( QA ) && 
-                 card.getDifficulty() < 40 ) {
-            int index = card.getDifficulty() / 10 ;
-            return QA_RET[index][level.getLevel()] ;
-        }
+        return getRetentionIntervals( card )[level.getLevel()] ;
+    }
+    
+    private long[] getRetentionIntervals( Card card ) {
         
-        return retentionPeriods.get( card.getCardType() )[level.getLevel()] ;
+        if( card.getCardType().equals( QA ) && 
+                card.getDifficulty() < 40 ) {
+           int index = card.getDifficulty() / 10 ;
+           return QA_RET[index] ;
+       }
+       return retentionPeriods.get( card.getCardType() ) ;
     }
     
     /**
@@ -254,12 +346,28 @@ public class RetentionAlgorithm {
      *         and 0. Retention value turns to 0 exponentially with time.
      */
     private double getProjectedRetentionValue( Card card, Level level, 
-                                               double startRetVal, long numSecs ) {
+                                               double startRetVal, 
+                                               long numSecs ) {
         
-        long absRetPeriod = getAbsRetentionPeriod( card, level ) ;
-        double retSlope  = -((double)(absRetPeriod))/RET_K ;
+        double retSlope = getRetentionSlope( card, level ) ;
+        return startRetVal*exp( -(numSecs/retSlope ) ) ;
+    }
+    
+    /**
+     * Given a card and a certain level, computes and returns the time in 
+     * seconds it will take to reach the target retention value. 
+     */
+    private long getTimeToTargetRetention( Card card, Level level,
+                                           double startRetVal,
+                                           double targetRetVal ) {
         
-        return startRetVal*Math.exp( -(numSecs/retSlope ) ) ;
+        double retSlope = getRetentionSlope( card, level ) ;
+        return (long)(-retSlope*log( targetRetVal/startRetVal )) ;
+    }
+    
+    private double getRetentionSlope( Card c, Level l ) {
+        long absRetPeriod = getAbsRetentionPeriod( c, l ) ;
+        return -((double)(absRetPeriod))/RET_K ;
     }
     
     private void publishOutput( String series, Date date, double rating ) {

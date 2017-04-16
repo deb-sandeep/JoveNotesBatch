@@ -107,7 +107,8 @@ public class PreparednessProcessingRequestDBO extends AbstractDBO {
             "select student_name, subject, date " +
             "from jove_notes.calendar_event " +
             "where " +
-            "    type=\"Exam\" " +
+            "    type=\"Exam\" and " +
+            "    date > NOW() " +
             "order by " +
             "    date asc" ;
         

@@ -3,6 +3,8 @@ package com.sandy.jovenotes.jnbatch.job.preparedness.vo;
 import java.util.ArrayList ;
 import java.util.List ;
 
+import com.sandy.jovenotes.jnbatch.job.preparedness.algo.Level ;
+
 public class Card {
 
     private Chapter chapter    = null ;
@@ -12,7 +14,10 @@ public class Card {
     
     private List<CardRating> ratings = new ArrayList<CardRating>() ;
     
-    private double currentRetentionValue = -1 ;
+    private double  currentRetentionValue = -1 ;
+    private double  examPreparedness      = Double.MIN_VALUE ;
+    private boolean examPreparednessSet   = false ;
+    private Level   proficiencyLevel      = null ;
     
     public Card( Chapter chapter, int cardId, String cardType, int difficulty ) {
         this.chapter    = chapter ;
@@ -61,5 +66,28 @@ public class Card {
             throw new IllegalStateException( "Retention value has not been calculated" ) ;
         }
         return this.currentRetentionValue ;
+    }
+    
+    public void setExamPreparedness( double val ) {
+        this.examPreparedness = val ;
+        this.examPreparednessSet = true ;
+    }
+    
+    public double getExamPreparedness() {
+        if( !examPreparednessSet ) {
+            throw new IllegalStateException( "Exam preparedness not commputed." ) ;
+        }
+        return this.examPreparedness ;
+    }
+    
+    public void setProficiencyLevel( Level level ) {
+        this.proficiencyLevel = level ;
+    }
+    
+    public Level getProficiencyLevel() {
+        if( this.proficiencyLevel == null ) {
+            throw new IllegalStateException( "Proficiency level not computed." ) ;
+        }
+        return this.proficiencyLevel ;
     }
 }
