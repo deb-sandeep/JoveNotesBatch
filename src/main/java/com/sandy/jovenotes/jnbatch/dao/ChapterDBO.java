@@ -76,4 +76,69 @@ public class ChapterDBO extends AbstractDBO {
         
         card.addRating( new CardRating( card, date, rating, score, timeSpent ) ) ;
     }
+    
+    public void updateChapterPreparedness( Chapter chapter ) 
+        throws Exception {
+        
+        String queryStr = 
+            "insert into jove_notes.chapter_preparedness ( " +
+            "    student_name, " + 
+            "    chapter_id, " + 
+            "    preparedness_score, " + 
+            "    last_computed_time " +
+            ") " +
+            "values " +
+            "( ?, ?, ?, NOW() ) " +
+            "on duplicate key update " +
+            "    preparedness_score = values ( preparedness_score ), " +
+            "    last_computed_time = NOW()" ;
+        
+        Connection c = null ;
+        PreparedStatement psmt = null ;
+        
+        try {
+            c = super.getConnection() ;
+            psmt = c.prepareStatement( queryStr ) ;
+            
+            psmt.setString( 1, chapter.getStudentName() ) ;
+            psmt.setInt   ( 2, chapter.getChapterId()   ) ;
+            psmt.setDouble( 3, chapter.getExamPreparedness() ) ;
+            
+            psmt.executeUpdate() ;
+            
+            updateCards( chapter, c ) ;
+        }
+        finally {
+            if( c != null ) {
+                super.releaseConnection( c ) ;
+            }
+        }
+    }
+    
+    private void updateCards( Chapter chapter, Connection conn ) 
+        throws Exception {
+        
+        String queryStr = 
+            "update jove_notes.card_learning_summary " +
+            "set " +
+            "    retention_value = ?, " +
+            "    exam_preparedness_value = ? " +
+            "where " +
+            "    chapter_id = ? and " +
+            "    card_id = ? and " +
+            "    student_name = ? " ;
+        
+        PreparedStatement psmt = conn.prepareStatement( queryStr ) ;
+        
+        for( Card card : chapter.getCards() ) {
+            psmt.setDouble( 1, card.getCurrentRetentionValue() ) ;
+            psmt.setDouble( 2, card.getExamPreparedness() ) ;
+            psmt.setInt   ( 3, chapter.getChapterId() ) ;
+            psmt.setInt   ( 4, card.getCardId() ) ;
+            psmt.setString( 5, chapter.getStudentName() ) ;
+            
+            psmt.addBatch() ;
+        }
+        psmt.executeBatch() ;
+    }
 }

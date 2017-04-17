@@ -148,13 +148,15 @@ public class RetentionAlgorithm {
             }
         }
         
-        elapsedTime = delta( new Date(), r.getDate() ) ;
-        retentionVal = getProjectedRetentionValue( r.getCard(),
-                                                   level,
-                                                   retentionVal, 
-                                                   elapsedTime ) ;
-        if( projectTrajectory ) {
-            publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
+        if( r != null ) {
+            elapsedTime = delta( new Date(), r.getDate() ) ;
+            retentionVal = getProjectedRetentionValue( r.getCard(),
+                                                       level,
+                                                       retentionVal, 
+                                                       elapsedTime ) ;
+            if( projectTrajectory ) {
+                publishAnnotation( "X", lastTrajectoryDate, retentionVal ) ;
+            }
         }
         
         card.setProficiencyLevel( level ) ;
@@ -186,7 +188,8 @@ public class RetentionAlgorithm {
         
         for( Iterator<CardRating> iter = ratings.iterator(); iter.hasNext(); ) {
             CardRating r = iter.next() ;
-            if( r.getScore() == 0 || r.getTimeTaken() == 0 ) {
+            if( (r.getScore() == 0 || r.getTimeTaken() == 0) && 
+                card.getDifficulty()!=0 ) {
                 iter.remove() ;
             }
         }

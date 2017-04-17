@@ -19,6 +19,8 @@ public class Chapter {
     private Map<Integer, Card> cardMap = new HashMap<Integer, Card>() ;
     private List<Card>         cards   = new ArrayList<Card>() ;
     
+    private double examPreparedness = 0 ;
+    
     public void addCard( Card card ) {
         cards.add( card ) ;
         cardMap.put( card.getCardId(), card ) ;
@@ -70,6 +72,14 @@ public class Chapter {
     
     public void setExamDate( Date examDate ) {
         this.examDate = examDate ;
+    }
+    
+    public void setExamPreparedness( double v ) {
+        this.examPreparedness = v ;
+    }
+    
+    public double getExamPreparedness() {
+        return this.examPreparedness ;
     }
 
     @Override

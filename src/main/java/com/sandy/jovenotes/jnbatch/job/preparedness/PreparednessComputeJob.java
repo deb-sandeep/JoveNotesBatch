@@ -13,7 +13,7 @@ import org.quartz.JobExecutionContext ;
 import org.quartz.JobExecutionException ;
 
 import com.sandy.jovenotes.jnbatch.config.ConfigManager ;
-import com.sandy.jovenotes.jnbatch.dao.PreparednessProcessingRequestDBO ;
+import com.sandy.jovenotes.jnbatch.dao.PrepProcRequestDBO ;
 import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 
 public class PreparednessComputeJob implements Job {
@@ -28,12 +28,12 @@ public class PreparednessComputeJob implements Job {
         
         String jobName = context.getJobDetail().getDescription() ;
         List<ChapterPreparednessComputer> tasks = null ; 
-        PreparednessProcessingRequestDBO dbo = null ;
+        PrepProcRequestDBO dbo = null ;
         
         log.debug( "Executing " + jobName + "@" + new Date() ) ;
         
         try {
-            dbo = new PreparednessProcessingRequestDBO() ;
+            dbo = new PrepProcRequestDBO() ;
             List<Chapter> requests = dbo.getProcessingRequests() ;
 
             if( requests != null && !requests.isEmpty() ) {

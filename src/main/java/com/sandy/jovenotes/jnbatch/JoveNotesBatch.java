@@ -5,7 +5,6 @@ import static org.quartz.JobBuilder.newJob ;
 import static org.quartz.TriggerBuilder.newTrigger ;
 
 import java.util.Map ;
-import java.util.logging.Level;
 
 import org.apache.log4j.Logger;
 import org.quartz.JobDetail ;
@@ -32,8 +31,6 @@ public class JoveNotesBatch {
     
     private void initialize( String[] args ) throws Exception {
         log.debug( "Initializing JoveNotes batch." ) ;
-        
-        java.util.logging.Logger.getLogger("").setLevel( Level.WARNING ) ;
         
         config = new ConfigManager( args ) ;
         if( config.isShowUsage() ) {
@@ -72,6 +69,8 @@ public class JoveNotesBatch {
                              .build() ;
             
             scheduler.scheduleJob( job, trigger ) ;
+            log.debug( "Scheduled job " + jobId ) ;
+            log.debug( "\tSchedule = " + jobCfg.getCron() ) ;
         }
         scheduler.start() ;
     }

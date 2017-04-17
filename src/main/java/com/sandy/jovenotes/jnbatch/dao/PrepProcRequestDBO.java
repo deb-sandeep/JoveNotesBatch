@@ -11,7 +11,7 @@ import java.util.Map ;
 
 import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 
-public class PreparednessProcessingRequestDBO extends AbstractDBO {
+public class PrepProcRequestDBO extends AbstractDBO {
 
     public List<Chapter> getProcessingRequests() 
         throws Exception {
@@ -181,5 +181,35 @@ public class PreparednessProcessingRequestDBO extends AbstractDBO {
         }
         
         return map ;
+    }
+    
+    public void deleteRequest( Chapter chapter )
+        throws Exception {
+        
+        final String queryStr = 
+            "delete from " +
+            "jove_notes.chapter_preparedness_request_queue " +
+            "where " +
+            "    chapter_id=? and " +
+            "    student_name=? " ;
+        
+        Connection c = null ;
+        PreparedStatement psmt = null ;
+        
+        try {
+            c = super.getConnection() ;
+            psmt = c.prepareStatement( queryStr ) ;
+            
+            psmt.setInt   ( 1, chapter.getChapterId() ) ;
+            psmt.setString( 2, chapter.getStudentName() ) ;
+            
+            psmt.executeUpdate() ;
+        }
+        finally {
+            if( c != null ) {
+                super.releaseConnection( c ) ;
+            }
+        }
+        
     }
 }
