@@ -31,24 +31,33 @@ public class ChapterPreparednessComputer implements Callable<Void> {
         
         try {
             double examPreparedness = 0 ;
+            double retention        = 0 ;
             
             dbo.populateCardDetails( chapter ) ;
             for( Card card : chapter.getCards() ) {
-                double p = algo.getExamPreparedness( card ) ;
-                examPreparedness += p ;
+                algo.getExamPreparedness( card ) ;
+                examPreparedness += card.getExamPreparedness() ;
+                retention += card.getCurrentRetentionValue() ;
             }
             
             if( !chapter.getCards().isEmpty() ) {
-                examPreparedness /= chapter.getCards().size() ;
+                int numCards = chapter.getCards().size() ;
+                examPreparedness /= numCards ;
+                retention /= numCards ;
             }
             else {
                 examPreparedness = 100 ;
+                retention = 100 ;
             }
             
             log.debug( "\t preparedness = " + examPreparedness ) ;
+            log.debug( "\t retention    = " + retention ) ;
             
             chapter.setExamPreparedness( examPreparedness ) ;
-            dbo.updateChapterPreparedness( chapter ) ;
+            chapter.setRetention( retention ) ;
+            
+            dbo.updateChapterPreparednessAndRetention( chapter ) ;
+            
             reqDbo.deleteRequest( chapter ) ;
         }
         catch( Exception e ) {

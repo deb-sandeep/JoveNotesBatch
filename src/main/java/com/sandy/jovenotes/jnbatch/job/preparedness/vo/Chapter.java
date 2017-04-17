@@ -20,6 +20,7 @@ public class Chapter {
     private List<Card>         cards   = new ArrayList<Card>() ;
     
     private double examPreparedness = 0 ;
+    private double retention        = 0 ;
     
     public void addCard( Card card ) {
         cards.add( card ) ;
@@ -80,6 +81,14 @@ public class Chapter {
     
     public double getExamPreparedness() {
         return this.examPreparedness ;
+    }
+    
+    public void setRetention( double v ) {
+        this.retention = v ;
+    }
+    
+    public double getRetention() {
+        return this.retention ;
     }
 
     @Override

@@ -77,7 +77,7 @@ public class ChapterDBO extends AbstractDBO {
         card.addRating( new CardRating( card, date, rating, score, timeSpent ) ) ;
     }
     
-    public void updateChapterPreparedness( Chapter chapter ) 
+    public void updateChapterPreparednessAndRetention( Chapter chapter ) 
         throws Exception {
         
         String queryStr = 
@@ -85,12 +85,14 @@ public class ChapterDBO extends AbstractDBO {
             "    student_name, " + 
             "    chapter_id, " + 
             "    preparedness_score, " + 
+            "    retention_score, " + 
             "    last_computed_time " +
             ") " +
             "values " +
-            "( ?, ?, ?, NOW() ) " +
+            "( ?, ?, ?, ?, NOW() ) " +
             "on duplicate key update " +
             "    preparedness_score = values ( preparedness_score ), " +
+            "    retention_score = values ( retention_score ), " +
             "    last_computed_time = NOW()" ;
         
         Connection c = null ;
@@ -103,6 +105,7 @@ public class ChapterDBO extends AbstractDBO {
             psmt.setString( 1, chapter.getStudentName() ) ;
             psmt.setInt   ( 2, chapter.getChapterId()   ) ;
             psmt.setDouble( 3, chapter.getExamPreparedness() ) ;
+            psmt.setDouble( 4, chapter.getRetention() ) ;
             
             psmt.executeUpdate() ;
             
