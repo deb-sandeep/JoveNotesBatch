@@ -18,7 +18,9 @@ public class PrepProcRequestDBO extends AbstractDBO {
         
         final String queryStr = 
             "select ucp.student_name, ucp.chapter_id, " +
-            "       c.subject_name, ucp.is_in_syllabus " +
+            "       c.syllabus_name, c.subject_name, c.chapter_num, " +
+            "       c.sub_chapter_num, c.chapter_name, " +
+            "       ucp.is_in_syllabus " +
             "from " +
             "    jove_notes.user_chapter_preferences ucp  " +
             "left outer join " +
@@ -85,10 +87,14 @@ public class PrepProcRequestDBO extends AbstractDBO {
         
         Chapter req = new Chapter() ;
         
-        req.setStudentName( rs.getString(  "student_name"   ) ) ;
-        req.setChapterId  ( rs.getInt(     "chapter_id"     ) ) ;
-        req.setSubjectName( rs.getString(  "subject_name"   ) ) ;
-        req.setInSyllabus ( rs.getBoolean( "is_in_syllabus" ) ) ;
+        req.setStudentName  ( rs.getString(  "student_name"    ) ) ;
+        req.setChapterId    ( rs.getInt(     "chapter_id"      ) ) ;
+        req.setSyllabusName ( rs.getString(  "syllabus_name"   ) ) ;
+        req.setSubjectName  ( rs.getString(  "subject_name"    ) ) ;
+        req.setChapterNum   ( rs.getInt(     "chapter_num"     ) ) ;
+        req.setSubChapterNum( rs.getInt(     "sub_chapter_num" ) ) ;
+        req.setChapterName  ( rs.getString(  "chapter_name"    ) ) ;
+        req.setInSyllabus   ( rs.getBoolean( "is_in_syllabus"  ) ) ;
         
         return req ;
     }

@@ -4,6 +4,7 @@ import static org.quartz.CronScheduleBuilder.cronSchedule ;
 import static org.quartz.JobBuilder.newJob ;
 import static org.quartz.TriggerBuilder.newTrigger ;
 
+import java.util.Date ;
 import java.util.Map ;
 
 import org.apache.log4j.Logger;
@@ -69,13 +70,15 @@ public class JoveNotesBatch {
                              .build() ;
             
             scheduler.scheduleJob( job, trigger ) ;
-            log.debug( "Scheduled job " + jobId ) ;
-            log.debug( "\tSchedule = " + jobCfg.getCron() ) ;
+            log.info( "Scheduled job " + jobId ) ;
+            log.info( "\tSchedule = " + jobCfg.getCron() ) ;
         }
         scheduler.start() ;
     }
     
     public static void main( String[] args ) throws Exception {
+        log.info( "--------------------------------------------------------" ) ;
+        log.info( new Date() ) ;
         log.info( "Starting JoveNotes processor." ) ;
         
         JoveNotesBatch processor = new JoveNotesBatch( args ) ;

@@ -10,9 +10,14 @@ import org.apache.commons.lang.StringUtils ;
 
 public class Chapter {
 
-    private String  studentName  = null ;
-    private int     chapterId    = -1 ;
-    private String  subjectName  = null ;
+    private String  studentName   = null ;
+    private int     chapterId     = -1 ;
+    private String  syllabusName  = null ;
+    private String  subjectName   = null ;
+    private int     chapterNum    = -1 ;
+    private int     subChapterNum = -1 ;
+    private String  chapterName   = null ;
+    
     private boolean isInSyllabus = false ;
     private Date    examDate     = null ;
     
@@ -91,6 +96,38 @@ public class Chapter {
         return this.retention ;
     }
 
+    public void setSyllabusName( String syllabus ) {
+        this.syllabusName = syllabus ;
+    }
+
+    public void setChapterNum( int chapterNum ) {
+        this.chapterNum = chapterNum ;
+    }
+
+    public void setSubChapterNum( int subChapterNum ) {
+        this.subChapterNum = subChapterNum ;
+    }
+
+    public void setChapterName( String name ) {
+        this.chapterName = name ;
+    }
+    
+    public String getSyllabusName() {
+        return syllabusName ;
+    }
+
+    public int getChapterNum() {
+        return chapterNum ;
+    }
+
+    public int getSubChapterNum() {
+        return subChapterNum ;
+    }
+
+    public String getChapterName() {
+        return chapterName ;
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder() ;
@@ -101,4 +138,5 @@ public class Chapter {
                .append( StringUtils.rightPad( "" + examDate,     12 ) ) ;
         return builder.toString() ;
     }
+
 }
