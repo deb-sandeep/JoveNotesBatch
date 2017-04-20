@@ -31,7 +31,7 @@ public class JoveNotesBatch {
     public static Database db = null ;
     public static HttpClient httpClient = null ;
     
-    private Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler() ;
+    private Scheduler scheduler = null ;
     
     public JoveNotesBatch( String[] args ) throws Exception {
         initialize( args ) ;
@@ -48,18 +48,45 @@ public class JoveNotesBatch {
         log.debug( "\tConfigManager initialized." ) ;
         log.info( "\tExecuting JoveNotes batch in " + config.getRunMode() + " mode." );
         
-        db = new Database( config.getDatabaseDriverName(), 
-                           config.getDatabaseURL(), 
-                           config.getDatabaseUser(), 
-                           config.getDatabasePassword() ) ;
-        db.returnConnection( db.getConnection() ) ;
+        initializeDatabase() ;
         log.debug( "\tDatabase initialized." ) ;
         
         createHttpClient() ;
         log.debug( "\tBatch robot initialized." ) ;
         
-        log.info( "JoveNotes batch - initialized." ) ;
+        scheduler = StdSchedulerFactory.getDefaultScheduler() ;
+        log.debug( "\tScheduler initiatlized." ) ;
+        
+        log.info( "JoveNotes batch - initialized. " + new Date() ) ;
         log.info( "" ) ;
+    }
+    
+    private void initializeDatabase() throws Exception {
+        
+        int attemptCount = 0 ;
+        boolean continueTrying = true ;
+        
+        while( continueTrying ) {
+            try {
+                attemptCount++ ;
+                db = new Database( config.getDatabaseDriverName(), 
+                        config.getDatabaseURL(), 
+                        config.getDatabaseUser(), 
+                        config.getDatabasePassword() ) ;
+                
+                db.returnConnection( db.getConnection() ) ;
+                continueTrying = false  ;
+            }
+            catch( Exception e ) {
+                if( attemptCount >= 10 ) {
+                    throw new Exception( "Database unavailable.", e ) ; 
+                }
+                else {
+                    log.info( "Database connection not established. Will try again" ) ;
+                    Thread.sleep( 30000 ) ;
+                }
+            }
+        }
     }
     
     private void createHttpClient() throws Exception {
