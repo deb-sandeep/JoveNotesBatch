@@ -1,16 +1,19 @@
 package com.sandy.jovenotes.jnbatch.job.preparedness.vo;
 
 import java.util.ArrayList ;
+import java.util.Date ;
 import java.util.List ;
 
 import com.sandy.jovenotes.jnbatch.job.preparedness.algo.Level ;
 
 public class Card {
 
-    private Chapter chapter    = null ;
-    private int     cardId     = 0 ;
-    private String  cardType   = null ;
-    private int     difficulty = 0 ;
+    private Chapter chapter      = null ;
+    private int     cardId       = 0 ;
+    private String  cardType     = null ;
+    private int     difficulty   = 0 ;
+    private String  curLevel     = null ;
+    private String  revisedLevel = null ;
     
     private List<CardRating> ratings = new ArrayList<CardRating>() ;
     
@@ -18,12 +21,35 @@ public class Card {
     private double  examPreparedness      = Double.MIN_VALUE ;
     private boolean examPreparednessSet   = false ;
     private Level   proficiencyLevel      = null ;
+    private long    secsSinceLastAttempt  = Integer.MAX_VALUE ;
     
-    public Card( Chapter chapter, int cardId, String cardType, int difficulty ) {
+    
+    public Card( Chapter chapter, int cardId, String cardType, 
+                 int difficulty, String curLevel ) {
+        
         this.chapter    = chapter ;
         this.cardId     = cardId ;
         this.cardType   = cardType ;
         this.difficulty = difficulty ;
+        this.curLevel   = curLevel ;
+    }
+    
+    public void postCreate() {
+        if( !ratings.isEmpty() ) {
+            Date now = new Date() ;
+            CardRating lastRating = ratings.get( ratings.size()-1 ) ;
+            
+            secsSinceLastAttempt = now.getTime() - lastRating.getDate().getTime() ;
+            secsSinceLastAttempt /= 1000 ;
+        }
+    }
+    
+    public long getSecondsSinceLastAttempt() {
+        return this.secsSinceLastAttempt ;
+    }
+    
+    public String getCurrentLevel() {
+        return this.curLevel ;
     }
     
     public Chapter getChapter() {
@@ -89,5 +115,13 @@ public class Card {
             throw new IllegalStateException( "Proficiency level not computed." ) ;
         }
         return this.proficiencyLevel ;
+    }
+    
+    public void setRevisedLevel( String level ) {
+        this.revisedLevel = level ;
+    }
+    
+    public String getRevisedLevel() {
+        return this.revisedLevel ;
     }
 }

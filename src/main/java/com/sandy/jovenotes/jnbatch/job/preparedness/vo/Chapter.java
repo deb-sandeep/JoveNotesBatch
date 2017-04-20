@@ -27,6 +27,8 @@ public class Chapter {
     private double examPreparedness = 0 ;
     private double retention        = 0 ;
     
+    private int numCardsWithLevelChanges = 0 ;
+    
     public void addCard( Card card ) {
         cards.add( card ) ;
         cardMap.put( card.getCardId(), card ) ;
@@ -128,6 +130,14 @@ public class Chapter {
         return chapterName ;
     }
 
+    public void setNumCardsWithLevelChanges( int numCardsWithLevelChanges ) {
+        this.numCardsWithLevelChanges = numCardsWithLevelChanges ;
+    }
+    
+    public int getNumCardsWithLevelChanges() {
+        return this.numCardsWithLevelChanges ;
+    }
+    
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder() ;
@@ -138,5 +148,6 @@ public class Chapter {
                .append( StringUtils.rightPad( "" + examDate,     12 ) ) ;
         return builder.toString() ;
     }
+
 
 }

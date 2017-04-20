@@ -19,23 +19,28 @@ public class ChapterDBO extends AbstractDBO {
             "    c.card_id, " +
             "    c.card_type, " +
             "    c.difficulty_level, " +
+            "    cls.current_level, " +
             "    cr.timestamp, " +
             "    cr.rating, " +
             "    cr.score, " +
             "    cr.time_spent " +
             "from " +
             "    jove_notes.card_rating cr, " +
-            "    jove_notes.card c " +
+            "    jove_notes.card c, " +
+            "    jove_notes.card_learning_summary cls " +
             "where " +
             "    cr.card_id = c.card_id and " +
+            "    cr.card_id = cls.card_id and " +
+            "    cr.student_name = cls.student_name and " +
             "    c.chapter_id = ? and " +
-            "    student_name = ? " +
+            "    cr.student_name = ? " +
             "order by " +
             "    c.card_id asc, " +
             "    cr.timestamp asc " ;
             
         Connection c = null ;
         PreparedStatement psmt = null ;
+        Card curCard = null ;
         
         try {
             c = super.getConnection() ;
@@ -47,7 +52,7 @@ public class ChapterDBO extends AbstractDBO {
             ResultSet rs = psmt.executeQuery() ;
             
             while( rs.next() ) {
-                processResultRow( chapter, rs ) ;
+                curCard = processResultRow( chapter, rs, curCard ) ;
             }
         }
         finally {
@@ -57,12 +62,13 @@ public class ChapterDBO extends AbstractDBO {
         }
     }
     
-    private void processResultRow( Chapter chapter, ResultSet rs )
+    private Card processResultRow( Chapter chapter, ResultSet rs, Card curCard )
         throws Exception {
         
         int    cardId    = rs.getInt    ( "card_id"    ) ;
         String cardType  = rs.getString ( "card_type"  ) ;
         int    difficulty= rs.getInt    ( "difficulty_level" ) ;
+        String curLevel  = rs.getString ( "current_level" ) ;
         Date   date      = rs.getDate   ( "timestamp"  ) ;
         char   rating    = rs.getString ( "rating"     ).charAt( 0 ) ;
         int    score     = rs.getInt    ( "score"      ) ;
@@ -70,14 +76,19 @@ public class ChapterDBO extends AbstractDBO {
 
         Card card = chapter.getCard( cardId ) ;
         if( card == null ) {
-            card = new Card( chapter, cardId, cardType, difficulty ) ;
+            card = new Card( chapter, cardId, cardType, difficulty, curLevel ) ;
             chapter.addCard( card ) ;
+            
+            if( curCard != null ) {
+                curCard.postCreate() ;
+            }
         }
         
         card.addRating( new CardRating( card, date, rating, score, timeSpent ) ) ;
+        return card ;
     }
     
-    public void updateChapterPreparednessAndRetention( Chapter chapter ) 
+    public void updateComputedValues( Chapter chapter ) 
         throws Exception {
         
         String queryStr = 
@@ -125,7 +136,8 @@ public class ChapterDBO extends AbstractDBO {
             "update jove_notes.card_learning_summary " +
             "set " +
             "    retention_value = ?, " +
-            "    exam_preparedness_value = ? " +
+            "    exam_preparedness_value = ?, " +
+            "    current_level = ? " +
             "where " +
             "    chapter_id = ? and " +
             "    card_id = ? and " +
@@ -134,11 +146,16 @@ public class ChapterDBO extends AbstractDBO {
         PreparedStatement psmt = conn.prepareStatement( queryStr ) ;
         
         for( Card card : chapter.getCards() ) {
+            
+            String level = card.getRevisedLevel() == null ? 
+                           card.getCurrentLevel() : card.getRevisedLevel() ;
+                    
             psmt.setDouble( 1, card.getCurrentRetentionValue() ) ;
             psmt.setDouble( 2, card.getExamPreparedness() ) ;
-            psmt.setInt   ( 3, chapter.getChapterId() ) ;
-            psmt.setInt   ( 4, card.getCardId() ) ;
-            psmt.setString( 5, chapter.getStudentName() ) ;
+            psmt.setString( 3, level ) ;
+            psmt.setInt   ( 4, chapter.getChapterId() ) ;
+            psmt.setInt   ( 5, card.getCardId() ) ;
+            psmt.setString( 6, chapter.getStudentName() ) ;
             
             psmt.addBatch() ;
         }

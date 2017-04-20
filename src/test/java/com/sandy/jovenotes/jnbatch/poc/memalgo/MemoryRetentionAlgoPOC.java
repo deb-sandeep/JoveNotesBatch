@@ -58,7 +58,7 @@ public class MemoryRetentionAlgoPOC extends JFrame
         examDt.set( 2017, Calendar.MAY, 9 ) ;
         
         chapter = new Chapter() ;
-        chapter.setChapterId( 397 ) ;
+        chapter.setChapterId( 344 ) ;
         chapter.setStudentName( "Deba" ) ;
         chapter.setExamDate( examDt.getTime() );
         

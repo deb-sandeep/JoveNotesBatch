@@ -31,6 +31,7 @@ public class ConfigManager{
     private static String CK_DB_USER       = "db.user" ;
     private static String CK_DB_PWD        = "db.password" ;
     private static String CK_JOB_ID_LIST   = "job.id.list" ;
+    private static String CK_BR_AUTH_KEY   = "batch.robot.auth.key" ;
     
     private static String CSK_JOB_CLASS    = "class" ;
     private static String CSK_JOB_CRON     = "cron" ;
@@ -42,6 +43,7 @@ public class ConfigManager{
     private String  databaseDriverName = null ;
     private String  databaseUser       = null ;
     private String  databasePassword   = null ;
+    private String  brAuthKey          = null ;
     private String  runMode            = null ;
     
     private Map<String, JobConfig> jobConfigMap = new HashMap<String, JobConfig>() ;
@@ -52,6 +54,7 @@ public class ConfigManager{
     public String  getDatabaseDriverName(){ return this.databaseDriverName; }
     public String  getDatabaseUser()      { return this.databaseUser; }
     public String  getDatabasePassword()  { return this.databasePassword; }
+    public String  getBatchRobotAuthKey() { return this.brAuthKey; }
     public String  getRunMode()           { return this.runMode; }
     
     public Map<String, JobConfig> getJobConfigMap() {
@@ -90,6 +93,20 @@ public class ConfigManager{
         
         if( StringUtil.isEmptyOrNull( this.databasePassword ) ) {
             this.databasePassword = config.getString( CK_DB_PWD ) ;
+            if( StringUtil.isEmptyOrNull( this.databasePassword ) ) {
+                this.databasePassword = System.getenv( "DB_PASSWORD" ) ;
+            }
+        }
+        
+        if( StringUtil.isEmptyOrNull( this.brAuthKey ) ) {
+            this.brAuthKey = config.getString( CK_BR_AUTH_KEY ) ;
+            if( StringUtil.isEmptyOrNull( this.brAuthKey ) ) {
+                this.brAuthKey = System.getenv( "BR_AUTH_KEY" ) ;
+                
+                if( StringUtil.isEmptyOrNull( this.brAuthKey ) ) {
+                    throw new Exception( "Batch robot autentication key not provided." ) ;
+                }
+            }
         }
     }
     
@@ -173,6 +190,7 @@ public class ConfigManager{
         
         String usageStr = "JoveNotes [h] [--dbUser <database user>] " + 
                           "[--dbPassword <database password>] " +
+                          "[--brAuthKey <batch robot auth key>] " +
                           "[--runMode development | production] " ;
         
         HelpFormatter helpFormatter = new HelpFormatter() ;
@@ -185,6 +203,7 @@ public class ConfigManager{
         options.addOption( "h", "Print this usage and exit." ) ;
         options.addOption( null, "dbUser",     true, "The database user name" ) ;
         options.addOption( null, "dbPassword", true, "The database password" ) ;
+        options.addOption( null, "brAuthKey",  true, "The batch robot authorization key" ) ;
         options.addOption( null, "runMode",    true, "Run mode, either 'development' or 'production'" ) ;
 
         return options ;
@@ -207,6 +226,7 @@ public class ConfigManager{
             
             this.databaseUser     = cmdLine.getOptionValue( "dbUser" ) ;
             this.databasePassword = cmdLine.getOptionValue( "dbPassword" ) ;
+            this.brAuthKey        = cmdLine.getOptionValue( "brAuthKey" ) ;
             this.runMode          = cmdLine.getOptionValue( "runMode" ) ;
 
             if( this.runMode == null ) {

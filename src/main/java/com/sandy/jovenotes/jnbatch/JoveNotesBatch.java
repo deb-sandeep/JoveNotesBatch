@@ -7,6 +7,12 @@ import static org.quartz.TriggerBuilder.newTrigger ;
 import java.util.Date ;
 import java.util.Map ;
 
+import org.apache.http.client.CookieStore ;
+import org.apache.http.client.HttpClient ;
+import org.apache.http.cookie.ClientCookie ;
+import org.apache.http.impl.client.BasicCookieStore ;
+import org.apache.http.impl.client.HttpClientBuilder ;
+import org.apache.http.impl.cookie.BasicClientCookie ;
 import org.apache.log4j.Logger;
 import org.quartz.JobDetail ;
 import org.quartz.Scheduler ;
@@ -23,6 +29,7 @@ public class JoveNotesBatch {
     
     public static ConfigManager config = null ;
     public static Database db = null ;
+    public static HttpClient httpClient = null ;
     
     private Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler() ;
     
@@ -48,8 +55,28 @@ public class JoveNotesBatch {
         db.returnConnection( db.getConnection() ) ;
         log.debug( "\tDatabase initialized." ) ;
         
+        createHttpClient() ;
+        log.debug( "\tBatch robot initialized." ) ;
+        
         log.info( "JoveNotes batch - initialized." ) ;
         log.info( "" ) ;
+    }
+    
+    private void createHttpClient() throws Exception {
+        
+        BasicClientCookie cookie = null ;
+        cookie = new BasicClientCookie( "auth_token", 
+                                        config.getBatchRobotAuthKey() ) ;
+        cookie.setPath( "/" ) ;
+        cookie.setAttribute( ClientCookie.DOMAIN_ATTR, "true" ) ;
+        cookie.setDomain( "localhost" ) ;
+        
+        CookieStore cookieStore = new BasicCookieStore() ;
+        cookieStore.addCookie( cookie );
+        
+        httpClient = HttpClientBuilder.create()
+                                      .setDefaultCookieStore(cookieStore)
+                                      .build() ;
     }
     
     private void start() throws Exception {

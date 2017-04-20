@@ -70,7 +70,6 @@ public class PrepProcRequestDBO extends AbstractDBO {
             while( rs.next() ) {
                 requests.add( createRequest( rs ) ) ;
             }
-            
             populateExamDates( requests ) ;
         }
         finally {
@@ -136,7 +135,9 @@ public class PrepProcRequestDBO extends AbstractDBO {
                     subChapterList = stuMap.get( subName ) ;
                     if( subChapterList != null ) {
                         for( Chapter req : subChapterList ) {
-                            if( req.getExamDate() == null ) {
+                            if( req.getExamDate() == null && 
+                                req.isInSyllabus() ) {
+                                
                                 // Why the null check? If we have two exams
                                 // for the same subject marked in the calendar
                                 // we pick up the first one.

@@ -24,6 +24,7 @@ import org.apache.log4j.Logger ;
 
 import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Card ;
 import com.sandy.jovenotes.jnbatch.job.preparedness.vo.CardRating ;
+import com.sandy.jovenotes.jnbatch.util.CardLevel ;
 import com.sandy.jovenotes.jnbatch.util.CardType ;
 
 public class RetentionAlgorithm {
@@ -77,14 +78,20 @@ public class RetentionAlgorithm {
         // Go through the current retention value computation as the 
         // retention value and level would be required in the computation
         // later, even if there is no exam looming in the future.
-        getCurrentRetentionValue( card ) ;
+        computeCurrentRetentionValue( card ) ;
         
         double preparedness = computeExamPreparedness( card ) ;
         card.setExamPreparedness( preparedness ) ;
+        
+        // Compute need to change card level. It is important to get the 
+        // card back into circulation or change its proficiency level based
+        // on its exam preparedness and other factors
+        computeLevelChange( card ) ;
+        
         return preparedness ;
     }
     
-    public double getCurrentRetentionValue( Card card ) {
+    private double computeCurrentRetentionValue( Card card ) {
         if( card == null ) {
             throw new IllegalStateException( "Card not set." ) ;
         }
@@ -382,6 +389,33 @@ public class RetentionAlgorithm {
     private void publishAnnotation( String text, Date date, double rating ) {
         for( RetentionAlgorithmListener l : listeners ) {
             l.addAnnotation( text, date, rating ) ;
+        }
+    }
+    
+    private void computeLevelChange( Card card ) {
+        
+        int    daysSinceLastAttempt = (int)(card.getSecondsSinceLastAttempt() / 86400) ;
+        double retentionValue       = card.getCurrentRetentionValue() ;
+        String currentLevel         = card.getCurrentLevel() ;
+        Date   examDate             = card.getChapter().getExamDate() ;
+        
+        // If we don't have an exam looming for which this card is in syllabus,
+        // we really don't need to get a card back into circulation automatically
+        if( examDate == null ) {
+            return ;
+        }
+        
+        // If the card is at an mastered level, it will not be picked up for
+        // practice. Hence there is a need to evaluate if we need to get the 
+        // card back into circulation
+        if( currentLevel.equals( "MAS" ) ) {
+            
+            // If the card has not been touched in the last 60 days and the 
+            // current retention level is below 50%, it needs to be brought back 
+            // into circulation
+            if( daysSinceLastAttempt >= 60 && retentionValue < 50 ) {
+                card.setRevisedLevel( CardLevel.NS ) ;
+            }
         }
     }
 }

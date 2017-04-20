@@ -20,6 +20,18 @@ db.user=root
 #            the value provided in this configuration file.
 #db.password=
 
+# The batch robot authentication key. The batch process leverages certain APIs
+# from the JoveNotes server as a part of its processing logic. The value of
+# this key signifies the authentication key for accessing the API.
+#
+# Optional - This value is optional in the configuration but is mandatory for
+#            the application. If a command line value (--brAuthKey) is provided
+#            it will supercede all values. Secondly the configuration is 
+#            checked. If no value is found a final check is done against the
+#            environment variable named "BR_AUTH_KEY". If still no value is 
+#            found, an exception is thrown.
+#batch.robot.auth.key=
+
 # The list of job identifiers. Each job has multiple sub configurations
 # qualified by 'job.<jobId>.' prefix. Mandatory sub configuration keys are
 # class
