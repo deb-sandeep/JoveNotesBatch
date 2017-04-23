@@ -63,10 +63,6 @@ public class ChapterPreparednessComputer implements Callable<Void> {
                 examPreparedness /= numCards ;
                 retention /= numCards ;
             }
-            else {
-                examPreparedness = 100 ;
-                retention = 100 ;
-            }
             
             log.debug( "\t preparedness = " + examPreparedness ) ;
             log.debug( "\t retention    = " + retention ) ;
