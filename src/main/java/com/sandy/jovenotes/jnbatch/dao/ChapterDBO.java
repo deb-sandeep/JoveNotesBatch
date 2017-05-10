@@ -15,28 +15,35 @@ public class ChapterDBO extends AbstractDBO {
         throws Exception {
         
         final String queryStr = 
-            "select " +
-            "    c.card_id, " +
-            "    c.card_type, " +
-            "    c.difficulty_level, " +
-            "    cls.current_level, " +
-            "    cr.timestamp, " +
-            "    cr.rating, " +
-            "    cr.score, " +
-            "    cr.time_spent " +
-            "from " +
-            "    jove_notes.card_rating cr, " +
-            "    jove_notes.card c, " +
-            "    jove_notes.card_learning_summary cls " +
-            "where " +
-            "    cr.card_id = c.card_id and " +
-            "    cr.card_id = cls.card_id and " +
-            "    cr.student_name = cls.student_name and " +
-            "    c.chapter_id = ? and " +
-            "    cr.student_name = ? " +
-            "order by " +
-            "    c.card_id asc, " +
-            "    cr.timestamp asc " ;
+                "select " +
+                "      c.card_id,  " +
+                "      c.card_type,  " +
+                "      c.difficulty_level,  " +
+                "      cls.current_level,  " +
+                "      cr.timestamp,  " +
+                "      cr.rating,  " +
+                "      cr.score,  " +
+                "      cr.time_spent " +
+                "from " +
+                "      jove_notes.card c " +
+                "left outer join " +
+                "      jove_notes.card_rating cr " +
+                "      on " +
+                "      cr.card_id = c.card_id " +
+                "left outer join " +
+                "      jove_notes.card_learning_summary cls " +
+                "      on " +
+                "      cls.card_id = c.card_id " +
+                "where " +
+                "      c.chapter_id = ? and  " +
+                "      cls.student_name = ? and  " +
+                "      ( " +
+                "            cr.student_name is null or  " +
+                "            cr.student_name = ? " +
+                "      ) " +
+                "order by  " +
+                "    c.card_id asc,  " +
+                "    cr.timestamp asc " ;
             
         Connection c = null ;
         PreparedStatement psmt = null ;
@@ -48,6 +55,7 @@ public class ChapterDBO extends AbstractDBO {
             
             psmt.setInt   ( 1, chapter.getChapterId()   ) ;
             psmt.setString( 2, chapter.getStudentName() ) ;
+            psmt.setString( 3, chapter.getStudentName() ) ;
             
             ResultSet rs = psmt.executeQuery() ;
             
@@ -69,10 +77,6 @@ public class ChapterDBO extends AbstractDBO {
         String cardType  = rs.getString ( "card_type"  ) ;
         int    difficulty= rs.getInt    ( "difficulty_level" ) ;
         String curLevel  = rs.getString ( "current_level" ) ;
-        Date   date      = rs.getDate   ( "timestamp"  ) ;
-        char   rating    = rs.getString ( "rating"     ).charAt( 0 ) ;
-        int    score     = rs.getInt    ( "score"      ) ;
-        int    timeSpent = rs.getInt    ( "time_spent" ) ;
 
         Card card = chapter.getCard( cardId ) ;
         if( card == null ) {
@@ -84,7 +88,15 @@ public class ChapterDBO extends AbstractDBO {
             }
         }
         
-        card.addRating( new CardRating( card, date, rating, score, timeSpent ) ) ;
+        Date date = rs.getDate ( "timestamp"  ) ;
+        if( date != null ) {
+            char   rating    = rs.getString ( "rating"     ).charAt( 0 ) ;
+            int    score     = rs.getInt    ( "score"      ) ;
+            int    timeSpent = rs.getInt    ( "time_spent" ) ;
+            
+            card.addRating( new CardRating( card, date, rating, score, timeSpent ) ) ;
+        }
+
         return card ;
     }
     

@@ -64,6 +64,10 @@ public class Card {
         return this.ratings ;
     }
     
+    public int getNumAttempts() {
+        return this.ratings.size() ;
+    }
+    
     public int getCardId() {
         return this.cardId ;
     }

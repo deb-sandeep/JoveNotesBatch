@@ -95,9 +95,6 @@ public class RetentionAlgorithm {
         if( card == null ) {
             throw new IllegalStateException( "Card not set." ) ;
         }
-        else if( card.getRatings().isEmpty() ) {
-            return 0 ;
-        }
         compute( card, false ) ;
         return card.getCurrentRetentionValue() ;
     }
