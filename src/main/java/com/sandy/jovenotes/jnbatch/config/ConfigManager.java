@@ -72,6 +72,7 @@ public class ConfigManager{
         if( this.showUsage )return ;
         
         PropertiesConfiguration propCfg = new PropertiesConfiguration() ;
+        propCfg.setListDelimiter( ':' );
         URL cfgURL = ConfigManager.class.getResource( "/config.properties" ) ;
         if( cfgURL == null ) {
             throw new Exception( "config.properties not found in classpath." ) ;
@@ -131,6 +132,7 @@ public class ConfigManager{
         JobConfig jobConfig = new JobConfig( jobId ) ;
         
         PropertiesConfiguration subCfg = getNestedConfig( config, "job." + jobId ) ;
+        subCfg.setListDelimiter( ':' );
         
         String clsName = getMandatoryConfig( CSK_JOB_CLASS, subCfg ) ;
         jobConfig.setJobClass( (Class<? extends Job>)Class.forName( clsName ) ) ;
@@ -154,6 +156,8 @@ public class ConfigManager{
                                                     String prefix ) {
         
         PropertiesConfiguration cfg = new PropertiesConfiguration() ;
+        cfg.setListDelimiter( ':' );
+        
         Iterator<String> iter = config.getKeys( prefix ) ;
         
         while( iter.hasNext() ) {
