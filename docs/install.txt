@@ -1,0 +1,36 @@
+JoveNotesBatch is installed as a system service which will be started at
+boot after mysql.service has been started.
+
+Why not @reboot?
+
+@reboot is grossly unreliable and lacks the added advantage of the systemctl
+interface.
+
+Steps to install JNBatch as a system service
+
+1. Link the jnbatch.service file as a system service file
+
+cd ~/etc/systemd/system
+sudo ln -s /home/sandeep/projects/bin/jnbatch/jnbatch.service jnbatch.service
+
+2. Verify the link exists
+
+3. Reload the systemctl daemon
+
+systemctl daemon-reload
+
+4. Enable jnbatch service
+
+systemctl enable jnbatch.service
+
+5. Confirm that the service was created successfully
+
+systemctl --all | grep jnbatch.service
+
+6. Start the service
+
+systemctl start jnbatch.service
+
+
+NOTE: The production config file needs to have the passwords and keys
+in the configuration. It doesn't pick up the values from environment.

@@ -1,0 +1,12 @@
+[Unit]
+Description=The jnbatch service which will start at boot time
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+Type=simple
+ExecStart=/home/sandeep/projects/bin/jnbatch/jnbatch
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target
