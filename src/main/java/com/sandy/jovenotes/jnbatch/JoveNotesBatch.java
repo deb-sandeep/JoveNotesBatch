@@ -133,7 +133,7 @@ public class JoveNotesBatch {
     public static void main( String[] args ) throws Exception {
         log.info( "--------------------------------------------------------" ) ;
         log.info( new Date() ) ;
-        log.info( "Starting JoveNotes processor." ) ;
+        log.info( "Starting JoveNotes batch." ) ;
         
         JoveNotesBatch processor = new JoveNotesBatch( args ) ;
         processor.start() ;

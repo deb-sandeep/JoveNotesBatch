@@ -4,7 +4,7 @@
 
   <groupId>com.sandy.jovenotes</groupId>
   <artifactId>jnbatch</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>jar</packaging>
 
   <name>jnbatch</name>
@@ -74,7 +74,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.35</version>
+            <version>8.0.17</version>
         </dependency>
         <dependency>
             <groupId>commons-pool</groupId>

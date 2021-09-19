@@ -55,11 +55,11 @@ public class MemoryRetentionAlgoPOC extends JFrame
         throws Exception {
         
         Calendar examDt = Calendar.getInstance() ;
-        examDt.set( 2017, Calendar.MAY, 9 ) ;
+        examDt.set( 2021, Calendar.OCTOBER, 9 ) ;
         
         chapter = new Chapter() ;
-        chapter.setChapterId( 344 ) ;
-        chapter.setStudentName( "Deba" ) ;
+        chapter.setChapterId( 1423 ) ;
+        chapter.setStudentName( "Munni" ) ;
         chapter.setExamDate( examDt.getTime() );
         
         ChapterDBO dbo = new ChapterDBO() ;
