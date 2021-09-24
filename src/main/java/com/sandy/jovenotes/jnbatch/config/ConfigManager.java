@@ -33,6 +33,12 @@ public class ConfigManager{
     private static String CK_JOB_ID_LIST   = "job.id.list" ;
     private static String CK_BR_AUTH_KEY   = "batch.robot.auth.key" ;
     
+    private static String CK_RECYCLE_NUM_DAYS_THRESHOLD  = "card.recycle.numDaysSinceLastAttempt" ;
+    private static String CK_RECYCLE_RETENTION_THRESHOLD = "card.recycle.minRetentionThreshold" ;    
+    
+    private static int DEF_RECYCLE_NUM_DAYS_THRESHOLD  = 60 ;
+    private static int DEF_RECYCLE_RETENTION_THRESHOLD = 50 ;    
+
     private static String CSK_JOB_CLASS    = "class" ;
     private static String CSK_JOB_CRON     = "cron" ;
     public  static String CSK_TP_SIZE      = "threadPoolSize" ;
@@ -46,6 +52,9 @@ public class ConfigManager{
     private String  brAuthKey          = null ;
     private String  runMode            = null ;
     
+    private int cycleNumDaysThreshold      = DEF_RECYCLE_NUM_DAYS_THRESHOLD ;
+    private int cycleMinRetentionThreshold = DEF_RECYCLE_RETENTION_THRESHOLD ;
+    
     private Map<String, JobConfig> jobConfigMap = new HashMap<String, JobConfig>() ;
 
     public boolean isShowUsage()          { return this.showUsage; }
@@ -56,6 +65,9 @@ public class ConfigManager{
     public String  getDatabasePassword()  { return this.databasePassword; }
     public String  getBatchRobotAuthKey() { return this.brAuthKey; }
     public String  getRunMode()           { return this.runMode; }
+    
+    public int getCycleNumDaysThreshold()   { return this.cycleNumDaysThreshold ; }
+    public int getCycleRetentionThreshold() { return this.cycleMinRetentionThreshold ; }
     
     public Map<String, JobConfig> getJobConfigMap() {
         return this.jobConfigMap ;
@@ -79,6 +91,7 @@ public class ConfigManager{
         }
         propCfg.load( cfgURL );
         parseDatabaseConfig( propCfg ) ;
+        parseCardCycleConfig( propCfg ) ;
         parseJobConfig( propCfg ) ;
     }
     
@@ -108,6 +121,17 @@ public class ConfigManager{
                     throw new Exception( "Batch robot autentication key not provided." ) ;
                 }
             }
+        }
+    }
+    
+    private void parseCardCycleConfig( PropertiesConfiguration config )
+        throws Exception {
+        
+        if( config.containsKey( CK_RECYCLE_NUM_DAYS_THRESHOLD ) &&
+            config.containsKey( CK_RECYCLE_RETENTION_THRESHOLD ) ) {
+            
+            this.cycleNumDaysThreshold = config.getInt( CK_RECYCLE_NUM_DAYS_THRESHOLD ) ;
+            this.cycleMinRetentionThreshold = config.getInt( CK_RECYCLE_RETENTION_THRESHOLD ) ;
         }
     }
     

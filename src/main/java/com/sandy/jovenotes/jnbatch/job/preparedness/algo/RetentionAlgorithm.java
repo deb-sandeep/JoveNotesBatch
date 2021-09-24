@@ -1,5 +1,6 @@
 package com.sandy.jovenotes.jnbatch.job.preparedness.algo;
 
+import static com.sandy.jovenotes.jnbatch.JoveNotesBatch.config ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.FIB ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.IMGLABEL ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.MATCHING ;
@@ -9,8 +10,8 @@ import static com.sandy.jovenotes.jnbatch.util.CardType.SPELLBEE ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.TF ;
 import static com.sandy.jovenotes.jnbatch.util.CardType.VOICE2TEXT ;
 import static java.lang.Math.exp ;
-import static java.lang.Math.pow ;
 import static java.lang.Math.log ;
+import static java.lang.Math.pow ;
 
 import java.util.ArrayList ;
 import java.util.Date ;
@@ -394,13 +395,16 @@ public class RetentionAlgorithm {
         int    daysSinceLastAttempt = (int)(card.getSecondsSinceLastAttempt() / 86400) ;
         double retentionValue       = card.getCurrentRetentionValue() ;
         String currentLevel         = card.getCurrentLevel() ;
-        Date   examDate             = card.getChapter().getExamDate() ;
+        //Date   examDate           = card.getChapter().getExamDate() ;
+        
+        int daysSinceLastAttemptThreshold = config.getCycleNumDaysThreshold() ;
+        int minRetentionThreshold         = config.getCycleRetentionThreshold() ;
         
         // If we don't have an exam looming for which this card is in syllabus,
         // we really don't need to get a card back into circulation automatically
-        if( examDate == null ) {
-            return ;
-        }
+        //if( examDate == null ) {
+        //    return ;
+        //}
         
         // If the card is at an mastered level, it will not be picked up for
         // practice. Hence there is a need to evaluate if we need to get the 
@@ -410,7 +414,9 @@ public class RetentionAlgorithm {
             // If the card has not been touched in the last 60 days and the 
             // current retention level is below 50%, it needs to be brought back 
             // into circulation
-            if( daysSinceLastAttempt >= 60 && retentionValue < 50 ) {
+            if( daysSinceLastAttempt >= daysSinceLastAttemptThreshold && 
+                retentionValue < minRetentionThreshold ) {
+                
                 card.setRevisedLevel( CardLevel.NS ) ;
             }
         }

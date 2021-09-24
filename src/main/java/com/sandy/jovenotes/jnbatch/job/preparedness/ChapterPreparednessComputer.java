@@ -73,6 +73,7 @@ public class ChapterPreparednessComputer implements Callable<Void> {
             
             dbo.updateComputedValues( chapter ) ;
             if( numCardsWithLevelChanges > 0 ) {
+                log.debug( "\t num cards cycled = " + numCardsWithLevelChanges ) ;
                 recomputeLearningStatusForChapter() ;
             }
             
