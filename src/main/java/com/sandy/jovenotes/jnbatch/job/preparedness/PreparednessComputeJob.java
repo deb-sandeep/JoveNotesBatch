@@ -20,6 +20,7 @@ import org.quartz.JobExecutionException ;
 
 import com.sandy.jovenotes.jnbatch.JoveNotesBatch ;
 import com.sandy.jovenotes.jnbatch.config.ConfigManager ;
+import com.sandy.jovenotes.jnbatch.dao.ManualTriggerDBO ;
 import com.sandy.jovenotes.jnbatch.dao.PrepProcRequestDBO ;
 import com.sandy.jovenotes.jnbatch.job.preparedness.vo.Chapter ;
 
@@ -35,14 +36,17 @@ public class PreparednessComputeJob implements Job {
     public void execute( JobExecutionContext context )
             throws JobExecutionException {
         
-        String jobName = context.getJobDetail().getDescription() ;
+        String jobName = context.getJobDetail().getKey().getName() ;
         List<ChapterPreparednessComputer> tasks = null ; 
         PrepProcRequestDBO dbo = null ;
+        ManualTriggerDBO manualTriggerDBO = null ;
         
         log.debug( "Executing " + jobName + "@" + new Date() ) ;
         
         try {
             dbo = new PrepProcRequestDBO() ;
+            manualTriggerDBO = new ManualTriggerDBO() ;
+            
             List<Chapter> requests = dbo.getProcessingRequests() ;
 
             if( requests != null && !requests.isEmpty() ) {
@@ -69,6 +73,7 @@ public class PreparednessComputeJob implements Job {
                 }
 
                 logResults( requests ) ;
+                manualTriggerDBO.unarmTrigger( jobName ) ;
             }
         }
         catch( Exception e ) {

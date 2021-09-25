@@ -5,6 +5,8 @@ import static org.quartz.JobBuilder.newJob ;
 import static org.quartz.TriggerBuilder.newTrigger ;
 
 import java.util.Date ;
+import java.util.HashMap ;
+import java.util.List ;
 import java.util.Map ;
 
 import org.apache.http.client.CookieStore ;
@@ -15,6 +17,8 @@ import org.apache.http.impl.client.HttpClientBuilder ;
 import org.apache.http.impl.cookie.BasicClientCookie ;
 import org.apache.log4j.Logger;
 import org.quartz.JobDetail ;
+import org.quartz.JobExecutionContext ;
+import org.quartz.JobKey ;
 import org.quartz.Scheduler ;
 import org.quartz.Trigger ;
 import org.quartz.impl.StdSchedulerFactory ;
@@ -22,6 +26,7 @@ import org.quartz.impl.StdSchedulerFactory ;
 import com.sandy.jovenotes.jnbatch.config.ConfigManager ;
 import com.sandy.jovenotes.jnbatch.config.JobConfig ;
 import com.sandy.jovenotes.jnbatch.util.Database ;
+import com.sandy.jovenotes.jnbatch.util.ManualTriggerWatchdog ;
 
 public class JoveNotesBatch {
     
@@ -32,6 +37,9 @@ public class JoveNotesBatch {
     public static HttpClient httpClient = null ;
     
     private Scheduler scheduler = null ;
+    private ManualTriggerWatchdog manualTriggerWatchdog = null ;
+    private Map<String, JobKey> jobKeyMap = new HashMap<String, JobKey>() ;
+    
     
     public JoveNotesBatch( String[] args ) throws Exception {
         initialize( args ) ;
@@ -56,6 +64,10 @@ public class JoveNotesBatch {
         
         scheduler = StdSchedulerFactory.getDefaultScheduler() ;
         log.debug( "\tScheduler initiatlized." ) ;
+        
+        manualTriggerWatchdog = new ManualTriggerWatchdog( this ) ;
+        manualTriggerWatchdog.start() ;
+        log.debug( "\tManual trigger watchdog started." ) ;
         
         log.info( "JoveNotes batch - initialized. " + new Date() ) ;
         log.info( "" ) ;
@@ -123,11 +135,51 @@ public class JoveNotesBatch {
                              .withSchedule( cronSchedule( jobCfg.getCron() ) )
                              .build() ;
             
-            scheduler.scheduleJob( job, trigger ) ;
+            registerJob( job, trigger ) ;
+
             log.info( "Scheduled job " + jobId ) ;
             log.info( "\tSchedule = " + jobCfg.getCron() ) ;
         }
         scheduler.start() ;
+    }
+    
+    
+    private void registerJob( JobDetail jobDetail, Trigger trigger ) 
+        throws Exception {
+
+        JobKey jobKey = jobDetail.getKey() ;
+        
+        this.scheduler.scheduleJob( jobDetail, trigger ) ;
+        this.jobKeyMap.put( jobKey.getName(), jobKey ) ;
+    }
+        
+    public void triggerJob( String jobName ) throws Exception {
+        JobKey key = this.jobKeyMap.get( jobName ) ;
+        if( key != null ) {
+            this.scheduler.triggerJob( key ) ;
+        }
+        else {
+            throw new IllegalArgumentException( "Job with the name " + 
+                                                jobName + 
+                                                " is not registered." ) ;
+        }
+    }
+    
+    public boolean isJobRunning( String jobName ) 
+        throws Exception {
+        
+        List<JobExecutionContext> currentJobs = null ;
+        
+        currentJobs = scheduler.getCurrentlyExecutingJobs() ;
+        
+        for( JobExecutionContext ctx : currentJobs ) {
+            String thisJobName = ctx.getJobDetail().getKey().getName() ;
+            if( jobName.equalsIgnoreCase( thisJobName ) ) {
+                return true ;
+            }
+        }
+        
+        return false;    
     }
     
     public static void main( String[] args ) throws Exception {
