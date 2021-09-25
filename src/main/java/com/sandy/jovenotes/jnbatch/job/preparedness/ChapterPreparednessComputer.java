@@ -40,7 +40,8 @@ public class ChapterPreparednessComputer implements Callable<Void> {
     public Void call() throws Exception {
         log.debug( "Computing preparedness for chapter " + 
                    chapter.getChapterId() + " for student " + 
-                   chapter.getStudentName() ) ;
+                   chapter.getStudentName() + "\n\tChapter name = " +
+                   chapter.getChapterName() ) ;
         
         try {
             double examPreparedness         = 0 ;
