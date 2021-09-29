@@ -400,16 +400,9 @@ public class RetentionAlgorithm {
         int daysSinceLastAttemptThreshold = config.getCycleNumDaysThreshold() ;
         int minRetentionThreshold         = config.getCycleRetentionThreshold() ;
         
-        // If we don't have an exam looming for which this card is in syllabus,
-        // we really don't need to get a card back into circulation automatically
-        //if( examDate == null ) {
-        //    return ;
-        //}
-        
-        // If the card is at an mastered level, it will not be picked up for
-        // practice. Hence there is a need to evaluate if we need to get the 
-        // card back into circulation
-        if( currentLevel.equals( "MAS" ) ) {
+        // If the card is at any level other than NS, let's bring it back into
+        // NS state based on qualifying criteria
+        if( !currentLevel.equals( "NS" ) ) {
             
             // If the card has not been touched in the last 60 days and the 
             // current retention level is below 50%, it needs to be brought back 
