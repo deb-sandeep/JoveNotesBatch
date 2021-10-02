@@ -410,6 +410,10 @@ public class RetentionAlgorithm {
             if( daysSinceLastAttempt >= daysSinceLastAttemptThreshold && 
                 retentionValue < minRetentionThreshold ) {
                 
+                log.debug( "\tCard " + card.getCardId() + " circulated. " + 
+                           "Gap = " + daysSinceLastAttempt + "," +  
+                           "Retention = " + retentionValue ) ;
+                
                 card.setRevisedLevel( CardLevel.NS ) ;
             }
         }

@@ -34,7 +34,7 @@ public class Card {
         this.curLevel   = curLevel ;
     }
     
-    public void postCreate() {
+    public void updateTimeSinceLastAttempt() {
         if( !ratings.isEmpty() ) {
             Date now = new Date() ;
             CardRating lastRating = ratings.get( ratings.size()-1 ) ;

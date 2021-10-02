@@ -60,7 +60,8 @@ public class ChapterDBO extends AbstractDBO {
             ResultSet rs = psmt.executeQuery() ;
             
             while( rs.next() ) {
-                curCard = processResultRow( chapter, rs, curCard ) ;
+                curCard = processResultRow( chapter, rs ) ;
+                curCard.updateTimeSinceLastAttempt() ;
             }
         }
         finally {
@@ -70,7 +71,7 @@ public class ChapterDBO extends AbstractDBO {
         }
     }
     
-    private Card processResultRow( Chapter chapter, ResultSet rs, Card curCard )
+    private Card processResultRow( Chapter chapter, ResultSet rs )
         throws Exception {
         
         int    cardId    = rs.getInt    ( "card_id"    ) ;
@@ -82,10 +83,6 @@ public class ChapterDBO extends AbstractDBO {
         if( card == null ) {
             card = new Card( chapter, cardId, cardType, difficulty, curLevel ) ;
             chapter.addCard( card ) ;
-            
-            if( curCard != null ) {
-                curCard.postCreate() ;
-            }
         }
         
         Date date = rs.getDate ( "timestamp"  ) ;
