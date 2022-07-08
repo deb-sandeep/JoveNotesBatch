@@ -49,7 +49,9 @@ public class ChapterPreparednessComputer implements Callable<Void> {
             int    numCardsWithLevelChanges = 0 ;
             
             dbo.populateCardDetails( chapter ) ;
+            
             for( Card card : chapter.getCards() ) {
+                
                 algo.getExamPreparedness( card ) ;
                 examPreparedness += card.getExamPreparedness() ;
                 retention += card.getCurrentRetentionValue() ;
