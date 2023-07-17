@@ -14,6 +14,7 @@ import org.apache.commons.configuration.PropertiesConfiguration ;
 import org.apache.log4j.Logger ;
 import org.quartz.Job ;
 
+import com.sandy.jovenotes.jnbatch.util.CardType ;
 import com.sandy.jovenotes.jnbatch.util.StringUtil ;
 
 /**
@@ -68,6 +69,37 @@ public class ConfigManager{
     
     public int getCycleNumDaysThreshold()   { return this.cycleNumDaysThreshold ; }
     public int getCycleRetentionThreshold() { return this.cycleMinRetentionThreshold ; }
+    
+    public float getCycleMultiplier( String cardType ) {
+        if( cardType.equals( CardType.QA ) ) {
+            return 1.0F ;
+        }
+        else if( cardType.equals( CardType.SPELLBEE ) ) {
+            return 1.5F ;
+        }
+        else if( cardType.equals( CardType.MATCHING ) ) {
+            return 1.5F ;
+        }
+        else if( cardType.equals( CardType.FIB ) ) {
+            return 1.75F ;
+        }
+        else if( cardType.equals( CardType.TF ) ) {
+            return 2.0F ;
+        }
+        else if( cardType.equals( CardType.IMGLABEL ) ) {
+            return 1.5F ;
+        }
+        else if( cardType.equals( CardType.MULTI_CHOICE ) ) {
+            return 1.25F ;
+        }
+        else if( cardType.equals( CardType.VOICE2TEXT ) ) {
+            return 3.0F ;
+        }
+        else if( cardType.equals( CardType.EXERCISE ) ) {
+            return 2.0F ;
+        }
+        return 1.0F ;
+    }
     
     public Map<String, JobConfig> getJobConfigMap() {
         return this.jobConfigMap ;

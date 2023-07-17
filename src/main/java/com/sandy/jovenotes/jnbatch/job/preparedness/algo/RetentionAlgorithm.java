@@ -404,10 +404,13 @@ public class RetentionAlgorithm {
         // NS state based on qualifying criteria
         if( !currentLevel.equals( "NS" ) ) {
             
+            int cycleThreshold = (int)( config.getCycleMultiplier( card.getCardType() ) * 
+                                        daysSinceLastAttemptThreshold ) ;
+            
             // If the card has not been touched in the last 60 days and the 
             // current retention level is below 50%, it needs to be brought back 
             // into circulation
-            if( daysSinceLastAttempt >= daysSinceLastAttemptThreshold && 
+            if( daysSinceLastAttempt >= cycleThreshold && 
                 retentionValue < minRetentionThreshold ) {
                 
                 log.debug( "\tCard " + card.getCardId() + " circulated. " + 
