@@ -36,23 +36,60 @@ public class RetentionAlgorithm {
     private static Map<String, long[]> retentionPeriods = new HashMap<>() ;
 
     static {
-        retentionPeriods.put( IMGLABEL    , toSeconds( new long[]{ 1, 2,  4,  8, 16, 32 } ) ) ;
-        retentionPeriods.put( QA          , toSeconds( new long[]{ 1, 2,  4,  8, 16, 32 } ) ) ;
-        retentionPeriods.put( VOICE2TEXT  , toSeconds( new long[]{ 1, 3,  6, 12, 30, 50 } ) ) ;
-        retentionPeriods.put( MATCHING    , toSeconds( new long[]{ 2, 4,  8, 10, 20, 40 } ) ) ;
-        retentionPeriods.put( FIB         , toSeconds( new long[]{ 3, 7, 14, 35, 40, 60 } ) ) ;
-        retentionPeriods.put( SPELLBEE    , toSeconds( new long[]{ 4, 8, 20, 45, 50, 70 } ) ) ;
-        retentionPeriods.put( MULTI_CHOICE, toSeconds( new long[]{ 5, 8, 20, 45, 50, 70 } ) ) ;
-        retentionPeriods.put( TF          , toSeconds( new long[]{ 5,10, 25, 50, 60, 70 } ) ) ;
+        retentionPeriods.put( TF          , toSeconds( new long[]{ 5, 10, 25, 50, 60, 70 } ) ) ;
+        retentionPeriods.put( MULTI_CHOICE, toSeconds( new long[]{ 5,  8, 20, 45, 50, 70 } ) ) ;
+        retentionPeriods.put( VOICE2TEXT  , toSeconds( new long[]{ 1,  3,  6, 12, 30, 50 } ) ) ;
+        retentionPeriods.put( SPELLBEE    , toSeconds( new long[]{ 4,  8, 20, 45, 50, 70 } ) ) ;
+
+        retentionPeriods.put( FIB         , toSeconds( new long[]{ 3,  7, 14, 35, 40, 60 } ) ) ;
+
+        retentionPeriods.put( QA          , toSeconds( new long[]{ 1,  2,  4,  8, 16, 32 } ) ) ;
+        retentionPeriods.put( MATCHING    , toSeconds( new long[]{ 2,  4,  8, 10, 20, 40 } ) ) ;
+        retentionPeriods.put( IMGLABEL    , toSeconds( new long[]{ 1,  2,  4,  8, 16, 32 } ) ) ;
     }
-    
+
     private static long[][] QA_RET = {
-        toSeconds( new long[]{ 4,10, 20, 45, 50, 70 } ),
-        toSeconds( new long[]{ 4, 7, 16, 35, 40, 65 } ),
-        toSeconds( new long[]{ 3, 6, 14, 30, 35, 60 } ),
-        toSeconds( new long[]{ 2, 4,  8, 16, 30, 50 } ),
+            toSeconds( new long[]{ 4, 10, 20, 45, 50, 70 } ),
+            toSeconds( new long[]{ 4,  7, 16, 35, 40, 65 } ),
+            toSeconds( new long[]{ 3,  6, 14, 30, 35, 60 } ),
+            toSeconds( new long[]{ 2,  4,  8, 16, 30, 50 } ),
     } ;
-    
+
+    public void addListener( RetentionAlgorithmListener listener ) {
+        this.listeners.add( listener ) ;
+    }
+
+    public void clearListeners() {
+        this.listeners.clear() ;
+    }
+
+    public double getExamPreparedness( Card card ) {
+        // Go through the current retention value computation as the
+        // retention value and level would be required in the computation
+        // later, even if there is no exam looming in the future.
+        computeCurrentRetentionValue( card ) ;
+
+        double preparedness = computeExamPreparedness( card ) ;
+        card.setExamPreparedness( preparedness ) ;
+
+        // Compute need to change card level. It is important to get the
+        // card back into circulation or change its proficiency level based
+        // on its exam preparedness and other factors
+        computeLevelChange( card ) ;
+
+        return preparedness ;
+    }
+
+    public void projectRetentionTrajectory( Card card ) {
+        if( card == null ) {
+            throw new IllegalStateException( "Card not set." ) ;
+        }
+
+        if( !card.getRatings().isEmpty() ) {
+            compute( card, true ) ;
+        }
+    }
+
     private static long[] toSeconds( long[] days ) {
         for( int i=0; i<days.length; i++ ) {
             days[i] *= 86400 ;
@@ -67,47 +104,12 @@ public class RetentionAlgorithm {
     private List<RetentionAlgorithmListener> listeners = 
             new ArrayList<RetentionAlgorithmListener>() ;
     
-    public void addListener( RetentionAlgorithmListener listener ) {
-        this.listeners.add( listener ) ;
-    }
-    
-    public void clearListeners() {
-        this.listeners.clear() ;
-    }
-    
-    public double getExamPreparedness( Card card ) {
-        // Go through the current retention value computation as the 
-        // retention value and level would be required in the computation
-        // later, even if there is no exam looming in the future.
-        computeCurrentRetentionValue( card ) ;
-        
-        double preparedness = computeExamPreparedness( card ) ;
-        card.setExamPreparedness( preparedness ) ;
-        
-        // Compute need to change card level. It is important to get the 
-        // card back into circulation or change its proficiency level based
-        // on its exam preparedness and other factors
-        computeLevelChange( card ) ;
-        
-        return preparedness ;
-    }
-    
     private double computeCurrentRetentionValue( Card card ) {
         if( card == null ) {
             throw new IllegalStateException( "Card not set." ) ;
         }
         compute( card, false ) ;
         return card.getCurrentRetentionValue() ;
-    }
-    
-    public void projectRetentionTrajectory( Card card ) {
-        if( card == null ) {
-            throw new IllegalStateException( "Card not set." ) ;
-        }
-        
-        if( !card.getRatings().isEmpty() ) {
-            compute( card, true ) ;
-        }
     }
     
     private double compute( Card card, boolean projectTrajectory ) {
@@ -231,7 +233,7 @@ public class RetentionAlgorithm {
                     break ;
                 }
             }
-            else if( retVal < 35 ) {
+            else if( retVal < 20 ) {
                 break ;
             }
             else if( date.after( now ) ) {
@@ -247,7 +249,7 @@ public class RetentionAlgorithm {
                                     initialRetVal, 
                                     delta( date, currentRating.getDate() ) ) ;
             
-            try { Thread.sleep( 2 ) ; } catch( Exception e ) {}
+            try { Thread.sleep( 20 ) ; } catch( Exception e ) {}
         }
         
         return date ;

@@ -8,11 +8,7 @@ import java.awt.event.ActionListener ;
 import java.util.Calendar ;
 import java.util.List ;
 
-import javax.swing.Box ;
-import javax.swing.JButton ;
-import javax.swing.JFrame ;
-import javax.swing.JLabel ;
-import javax.swing.JPanel ;
+import javax.swing.*;
 
 import org.apache.log4j.Logger ;
 
@@ -31,11 +27,13 @@ public class MemoryRetentionAlgoPOC extends JFrame
     private JNChartPanel       chart   = new JNChartPanel() ;
     private JButton            nextBtn = new JButton( ">>" ) ;
     private JButton            prevBtn = new JButton( "<<" ) ;
+    private JToggleButton      pauseBtn= new JToggleButton( "||" ) ;
     private JLabel             typeLbl = new JLabel() ;
     private RetentionAlgorithm algo    = null ;
     private Chapter            chapter = null ;
     private List<Card>         cards   = null ;
     private int                curIndex= 0 ;
+    private boolean            paused  = false ;
 
     public MemoryRetentionAlgoPOC() 
         throws Exception {
@@ -58,7 +56,7 @@ public class MemoryRetentionAlgoPOC extends JFrame
         examDt.set( 2021, Calendar.OCTOBER, 9 ) ;
         
         chapter = new Chapter() ;
-        chapter.setChapterId( 1423 ) ;
+        chapter.setChapterId( 1788 ) ;
         chapter.setStudentName( "Munni" ) ;
         chapter.setExamDate( examDt.getTime() );
         
@@ -82,12 +80,15 @@ public class MemoryRetentionAlgoPOC extends JFrame
         panel.setLayout( new FlowLayout( FlowLayout.LEFT ) );
         panel.add( prevBtn ) ;
         panel.add( Box.createHorizontalStrut( 10 ) ) ;
+        panel.add( pauseBtn ) ;
+        panel.add( Box.createHorizontalStrut( 10 ) ) ;
         panel.add( nextBtn ) ;
         panel.add( Box.createHorizontalStrut( 10 ) ) ;
         panel.add( typeLbl ) ;
         
         prevBtn.addActionListener( this ) ;
         nextBtn.addActionListener( this ) ;
+        pauseBtn.addActionListener( this ) ;
         
         return panel ;
     }
@@ -100,34 +101,56 @@ public class MemoryRetentionAlgoPOC extends JFrame
     @Override
     public void actionPerformed( ActionEvent e ) {
         if( e.getSource() == prevBtn ) {
+            paused = false ;
             if( curIndex > 0 ) {
                 curIndex-- ;
             }
+            Thread t = new Thread( new Runnable() {
+                @Override
+                public void run() {
+                    simulateCard() ;
+                }
+            }) ;
+            t.start() ;
         }
-        else {
+        else if( e.getSource() == nextBtn ){
+            paused = false ;
             if( curIndex < cards.size()-1 ) {
                 curIndex++ ;
             }
+            Thread t = new Thread( new Runnable() {
+                @Override
+                public void run() {
+                    simulateCard() ;
+                }
+            }) ;
+            t.start() ;
         }
-        
-        Thread t = new Thread( new Runnable() {
-            @Override
-            public void run() {
-                simulateCard() ;
-            }
-        }) ;
-        t.start() ;
+        else if( e.getSource() == pauseBtn ){
+            paused = pauseBtn.getModel().isSelected() ;
+        }
+
+        pauseBtn.getModel().setSelected( paused ) ;
+        pauseBtn.setText( paused ? "Paused" : " || " ) ;
     }
     
     private void simulateCard() {
+
+        if( paused ) {
+            try {
+                Thread.sleep( 100 ) ;
+            }
+            catch (InterruptedException ignored) {}
+            simulateCard() ;
+        }
         
         prevBtn.setEnabled( false ) ;
         nextBtn.setEnabled( false ) ;
         chart.clear() ;
         
         Card curCard = cards.get( curIndex ) ;
-        typeLbl.setText( curCard.getCardType()   + "  ( " + 
-                         curCard.getDifficulty() + " )" ) ;
+        typeLbl.setText( curCard.getCardType()   + "  (id= " +
+                         curCard.getCardId() + ", #attempts= " + curCard.getNumAttempts() + ")" ) ;
         
         algo.projectRetentionTrajectory( curCard ) ;
         

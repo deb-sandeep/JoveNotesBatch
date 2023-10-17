@@ -81,16 +81,16 @@ public class ConfigManager{
             return 1.5F ;
         }
         else if( cardType.equals( CardType.FIB ) ) {
-            return 1.75F ;
+            return 2.0F ;
         }
         else if( cardType.equals( CardType.TF ) ) {
-            return 2.0F ;
+            return 2.5F ;
         }
         else if( cardType.equals( CardType.IMGLABEL ) ) {
             return 1.5F ;
         }
         else if( cardType.equals( CardType.MULTI_CHOICE ) ) {
-            return 1.25F ;
+            return 1.5F ;
         }
         else if( cardType.equals( CardType.VOICE2TEXT ) ) {
             return 3.0F ;
