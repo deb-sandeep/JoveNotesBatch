@@ -13,6 +13,7 @@ public class Card {
     private String  cardType     = null ;
     private int     difficulty   = 0 ;
     private String  curLevel     = null ;
+    private int     absLE        = 0 ;
     private String  revisedLevel = null ;
     
     private List<CardRating> ratings = new ArrayList<CardRating>() ;
@@ -25,13 +26,14 @@ public class Card {
     
     
     public Card( Chapter chapter, int cardId, String cardType, 
-                 int difficulty, String curLevel ) {
+                 int difficulty, String curLevel, int absLE ) {
         
         this.chapter    = chapter ;
         this.cardId     = cardId ;
         this.cardType   = cardType ;
         this.difficulty = difficulty ;
         this.curLevel   = curLevel ;
+        this.absLE      = absLE ;
     }
     
     public void updateTimeSinceLastAttempt() {
@@ -67,6 +69,8 @@ public class Card {
     public int getNumAttempts() {
         return this.ratings.size() ;
     }
+
+    public int getAbsLearningEfficiency() { return this.absLE ; }
     
     public int getCardId() {
         return this.cardId ;

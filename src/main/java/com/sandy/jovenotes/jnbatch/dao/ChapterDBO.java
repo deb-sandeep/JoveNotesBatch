@@ -23,7 +23,8 @@ public class ChapterDBO extends AbstractDBO {
                 "      cr.timestamp,  " +
                 "      cr.rating,  " +
                 "      cr.score,  " +
-                "      cr.time_spent " +
+                "      cr.time_spent, " +
+                "      cls.abs_learning_efficiency " +
                 "from " +
                 "      jove_notes.card c " +
                 "left outer join " +
@@ -78,10 +79,11 @@ public class ChapterDBO extends AbstractDBO {
         String cardType  = rs.getString ( "card_type"  ) ;
         int    difficulty= rs.getInt    ( "difficulty_level" ) ;
         String curLevel  = rs.getString ( "current_level" ) ;
+        int    absLE     = rs.getInt    ( "abs_learning_efficiency" ) ;
 
         Card card = chapter.getCard( cardId ) ;
         if( card == null ) {
-            card = new Card( chapter, cardId, cardType, difficulty, curLevel ) ;
+            card = new Card( chapter, cardId, cardType, difficulty, curLevel, absLE ) ;
             chapter.addCard( card ) ;
         }
         

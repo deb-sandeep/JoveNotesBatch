@@ -391,36 +391,52 @@ public class RetentionAlgorithm {
             l.addAnnotation( text, date, rating ) ;
         }
     }
-    
+
+    /*
+     * Reverting back the resurrected cards. This is temporary till we have
+     * a more mature regression based model in place.
+     */
     private void computeLevelChange( Card card ) {
-        
-        int    daysSinceLastAttempt = (int)(card.getSecondsSinceLastAttempt() / 86400) ;
-        double retentionValue       = card.getCurrentRetentionValue() ;
-        String currentLevel         = card.getCurrentLevel() ;
-        //Date   examDate           = card.getChapter().getExamDate() ;
-        
-        int daysSinceLastAttemptThreshold = config.getCycleNumDaysThreshold() ;
-        int minRetentionThreshold         = config.getCycleRetentionThreshold() ;
-        
-        // If the card is at any level other than NS, let's bring it back into
-        // NS state based on qualifying criteria
-        if( !currentLevel.equals( "NS" ) ) {
-            
-            int cycleThreshold = (int)( config.getCycleMultiplier( card.getCardType() ) * 
-                                        daysSinceLastAttemptThreshold ) ;
-            
-            // If the card has not been touched in the last 60 days and the 
-            // current retention level is below 50%, it needs to be brought back 
-            // into circulation
-            if( daysSinceLastAttempt >= cycleThreshold && 
-                retentionValue < minRetentionThreshold ) {
-                
-                log.debug( "\tCard " + card.getCardId() + " circulated. " + 
-                           "Gap = " + daysSinceLastAttempt + "," +  
-                           "Retention = " + retentionValue ) ;
-                
-                card.setRevisedLevel( CardLevel.NS ) ;
-            }
+
+        if( card.getCurrentLevel().equals( "NS" ) &&
+            card.getNumAttempts() > 2 &&
+            card.getAbsLearningEfficiency() > 80) {
+
+            log.debug( "\tCard " + card.getCardId() + " moved to MAS. " ) ;
+
+            card.setRevisedLevel( CardLevel.MAS ) ;
         }
     }
+
+//    private void computeLevelChange( Card card ) {
+//
+//        int    daysSinceLastAttempt = (int)(card.getSecondsSinceLastAttempt() / 86400) ;
+//        double retentionValue       = card.getCurrentRetentionValue() ;
+//        String currentLevel         = card.getCurrentLevel() ;
+//        //Date   examDate           = card.getChapter().getExamDate() ;
+//
+//        int daysSinceLastAttemptThreshold = config.getCycleNumDaysThreshold() ;
+//        int minRetentionThreshold         = config.getCycleRetentionThreshold() ;
+//
+//        // If the card is at any level other than NS, let's bring it back into
+//        // NS state based on qualifying criteria
+//        if( !currentLevel.equals( "NS" ) ) {
+//
+//            int cycleThreshold = (int)( config.getCycleMultiplier( card.getCardType() ) *
+//                                        daysSinceLastAttemptThreshold ) ;
+//
+//            // If the card has not been touched in the last 60 days and the
+//            // current retention level is below 50%, it needs to be brought back
+//            // into circulation
+//            if( daysSinceLastAttempt >= cycleThreshold &&
+//                retentionValue < minRetentionThreshold ) {
+//
+//                log.debug( "\tCard " + card.getCardId() + " circulated. " +
+//                           "Gap = " + daysSinceLastAttempt + "," +
+//                           "Retention = " + retentionValue ) ;
+//
+//                card.setRevisedLevel( CardLevel.NS ) ;
+//            }
+//        }
+//    }
 }

@@ -71,14 +71,25 @@ public class PreparednessComputeJob implements Job {
                         task.call() ;
                     }
                 }
-
                 logResults( requests ) ;
-                manualTriggerDBO.unarmTrigger( jobName ) ;
+            }
+            else {
+                log.info( "  No requests for processing found." ) ;
             }
         }
         catch( Exception e ) {
             log.error( "Error in executing " + jobName, e ) ;
             throw new JobExecutionException( e ) ;
+        }
+        finally {
+            if( manualTriggerDBO != null ) {
+                try {
+                    manualTriggerDBO.unarmTrigger( jobName ) ;
+                }
+                catch( Exception e ) {
+                    log.error( "Could not unarm manual trigger.", e ) ;
+                }
+            }
         }
     }
     
