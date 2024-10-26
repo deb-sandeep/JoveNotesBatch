@@ -6,7 +6,7 @@ import java.sql.ResultSet ;
 import java.util.ArrayList ;
 import java.util.List ;
 
-public class ManualTriggerDBO extends AbstractDBO {
+public class ManualJobTriggerDBO extends AbstractDBO {
     
     public static class ManualTrigger {
         
@@ -86,7 +86,7 @@ public class ManualTriggerDBO extends AbstractDBO {
         return trigger ;
     }
 
-    public void unarmTrigger( String jobName ) 
+    public void disarmTrigger( String jobName )
         throws Exception {
         
         String queryStr = 

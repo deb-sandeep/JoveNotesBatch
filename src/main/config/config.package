@@ -51,6 +51,6 @@ card.recycle.minRetentionThreshold=50
 # Mandatory - If not specified, the program will exit.
 job.id.list=PreparednessComputeJob
 
-job.PreparednessComputeJob.class=com.sandy.jovenotes.jnbatch.job.preparedness.PreparednessComputeJob
+job.PreparednessComputeJob.class=com.sandy.jovenotes.jnbatch.job.revision.PreparednessComputeJob
 job.PreparednessComputeJob.cron=0 0 16,19,23 ? * * *
 job.PreparednessComputeJob.threadPoolSize=10

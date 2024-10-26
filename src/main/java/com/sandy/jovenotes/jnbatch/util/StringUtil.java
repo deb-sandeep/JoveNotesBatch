@@ -1,11 +1,10 @@
 package com.sandy.jovenotes.jnbatch.util ;
 
-/**
- * Utility methods on String.
- * 
- * @author Sandeep
- */
 public final class StringUtil {
+    
+    public static String round( float f ) {
+        return Float.toString( ( float )(Math.round( f * 100 )/100.0) ) ;
+    }
 
     public static boolean isEmptyOrNull( final String str ) {
         return ( str == null || "".equals( str.trim() ) ) ;

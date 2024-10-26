@@ -11,6 +11,7 @@ import java.util.Map ;
 
 import org.apache.http.client.CookieStore ;
 import org.apache.http.client.HttpClient ;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.cookie.ClientCookie ;
 import org.apache.http.impl.client.BasicCookieStore ;
 import org.apache.http.impl.client.HttpClientBuilder ;
@@ -40,7 +41,6 @@ public class JoveNotesBatch {
     private ManualTriggerWatchdog manualTriggerWatchdog = null ;
     private Map<String, JobKey> jobKeyMap = new HashMap<String, JobKey>() ;
     
-    
     public JoveNotesBatch( String[] args ) throws Exception {
         initialize( args ) ;
     }
@@ -54,7 +54,7 @@ public class JoveNotesBatch {
             System.exit( 0 );
         }
         log.debug( "\tConfigManager initialized." ) ;
-        log.info( "\tExecuting JoveNotes batch in " + config.getRunMode() + " mode." );
+        log.info( "\tExecuting JoveNotes batch in " + (config.isDevMode() ? "dev" : "prod") + " mode." );
         
         initializeDatabase() ;
         log.debug( "\tDatabase initialized." ) ;
@@ -113,8 +113,15 @@ public class JoveNotesBatch {
         CookieStore cookieStore = new BasicCookieStore() ;
         cookieStore.addCookie( cookie );
         
+        RequestConfig requestConfig = RequestConfig.custom()
+                                                   .setConnectionRequestTimeout( 30*1000 )
+                                                   .setConnectTimeout( 30*1000 )
+                                                   .setSocketTimeout( 30*1000 )
+                                                   .build() ;
+        
         httpClient = HttpClientBuilder.create()
                                       .setDefaultCookieStore(cookieStore)
+                                      .setDefaultRequestConfig( requestConfig )
                                       .build() ;
     }
     

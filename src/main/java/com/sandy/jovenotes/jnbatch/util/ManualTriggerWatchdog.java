@@ -5,33 +5,34 @@ import java.util.List ;
 import org.apache.log4j.Logger ;
 
 import com.sandy.jovenotes.jnbatch.JoveNotesBatch ;
-import com.sandy.jovenotes.jnbatch.dao.ManualTriggerDBO ;
-import com.sandy.jovenotes.jnbatch.dao.ManualTriggerDBO.ManualTrigger ;
+import com.sandy.jovenotes.jnbatch.dao.ManualJobTriggerDBO;
+import com.sandy.jovenotes.jnbatch.dao.ManualJobTriggerDBO.ManualTrigger ;
 
 public class ManualTriggerWatchdog extends Thread {
     
     private static final Logger log = Logger.getLogger( ManualTriggerWatchdog.class ) ;
 
-    private JoveNotesBatch batch = null ;
-    private ManualTriggerDBO triggerDBO = null ;
+    private JoveNotesBatch      batch      = null ;
+    private ManualJobTriggerDBO triggerDBO = null ;
     
     public ManualTriggerWatchdog( JoveNotesBatch batch ) {
         super.setDaemon( true ) ;
         this.batch = batch ;
-        this.triggerDBO = new ManualTriggerDBO() ;
+        this.triggerDBO = new ManualJobTriggerDBO() ;
     }
     
     @Override
     public void run() {
         
-        log.info( "Initiating maual trigger watchdog" ) ;
+        log.info( "Initiating manual trigger watchdog" ) ;
         List<ManualTrigger> activeTriggers = null ;
         
         try {
             while( true ) {
-                //log.debug( "Polling for manual trigger." ) ;
                 activeTriggers = triggerDBO.getActiveTriggers() ;
+                
                 for( ManualTrigger trigger : activeTriggers ) {
+                    
                     if( trigger.getTriggerFlag() == ManualTrigger.ACTIVE ) {
                         
                         log.info( "Manually triggering job " + trigger.getJobName() ) ;
@@ -46,7 +47,13 @@ public class ManualTriggerWatchdog extends Thread {
                         }
                     }
                 }
-                Thread.sleep( 60*1000 ) ;
+                
+                if( JoveNotesBatch.config.isDevMode() ) {
+                    Thread.sleep( 5*1000 ) ;
+                }
+                else {
+                    Thread.sleep( 60*1000 ) ;
+                }
             }
         }
         catch( Exception e ) {

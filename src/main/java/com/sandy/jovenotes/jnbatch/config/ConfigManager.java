@@ -17,12 +17,6 @@ import org.quartz.Job ;
 import com.sandy.jovenotes.jnbatch.util.CardType ;
 import com.sandy.jovenotes.jnbatch.util.StringUtil ;
 
-/**
- * The configuration manager for JoveNotes processor. All the configuration 
- * entities are accessible by getter methods.
- * 
- * @author Sandeep
- */
 public class ConfigManager{
 
     private static Logger log = Logger.getLogger(ConfigManager.class);
@@ -34,15 +28,8 @@ public class ConfigManager{
     private static String CK_JOB_ID_LIST   = "job.id.list" ;
     private static String CK_BR_AUTH_KEY   = "batch.robot.auth.key" ;
     
-    private static String CK_RECYCLE_NUM_DAYS_THRESHOLD  = "card.recycle.numDaysSinceLastAttempt" ;
-    private static String CK_RECYCLE_RETENTION_THRESHOLD = "card.recycle.minRetentionThreshold" ;    
-    
-    private static int DEF_RECYCLE_NUM_DAYS_THRESHOLD  = 60 ;
-    private static int DEF_RECYCLE_RETENTION_THRESHOLD = 50 ;    
-
     private static String CSK_JOB_CLASS    = "class" ;
     private static String CSK_JOB_CRON     = "cron" ;
-    public  static String CSK_TP_SIZE      = "threadPoolSize" ;
     
     private boolean showUsage          = false ;
     private File    wkspDir            = null ;
@@ -53,9 +40,6 @@ public class ConfigManager{
     private String  brAuthKey          = null ;
     private String  runMode            = null ;
     
-    private int cycleNumDaysThreshold      = DEF_RECYCLE_NUM_DAYS_THRESHOLD ;
-    private int cycleMinRetentionThreshold = DEF_RECYCLE_RETENTION_THRESHOLD ;
-    
     private Map<String, JobConfig> jobConfigMap = new HashMap<String, JobConfig>() ;
 
     public boolean isShowUsage()          { return this.showUsage; }
@@ -65,41 +49,6 @@ public class ConfigManager{
     public String  getDatabaseUser()      { return this.databaseUser; }
     public String  getDatabasePassword()  { return this.databasePassword; }
     public String  getBatchRobotAuthKey() { return this.brAuthKey; }
-    public String  getRunMode()           { return this.runMode; }
-    
-    public int getCycleNumDaysThreshold()   { return this.cycleNumDaysThreshold ; }
-    public int getCycleRetentionThreshold() { return this.cycleMinRetentionThreshold ; }
-    
-    public float getCycleMultiplier( String cardType ) {
-        if( cardType.equals( CardType.QA ) ) {
-            return 1.0F ;
-        }
-        else if( cardType.equals( CardType.SPELLBEE ) ) {
-            return 1.5F ;
-        }
-        else if( cardType.equals( CardType.MATCHING ) ) {
-            return 1.5F ;
-        }
-        else if( cardType.equals( CardType.FIB ) ) {
-            return 2.0F ;
-        }
-        else if( cardType.equals( CardType.TF ) ) {
-            return 2.5F ;
-        }
-        else if( cardType.equals( CardType.IMGLABEL ) ) {
-            return 1.5F ;
-        }
-        else if( cardType.equals( CardType.MULTI_CHOICE ) ) {
-            return 1.5F ;
-        }
-        else if( cardType.equals( CardType.VOICE2TEXT ) ) {
-            return 3.0F ;
-        }
-        else if( cardType.equals( CardType.EXERCISE ) ) {
-            return 2.0F ;
-        }
-        return 1.0F ;
-    }
     
     public Map<String, JobConfig> getJobConfigMap() {
         return this.jobConfigMap ;
@@ -123,7 +72,6 @@ public class ConfigManager{
         }
         propCfg.load( cfgURL );
         parseDatabaseConfig( propCfg ) ;
-        parseCardCycleConfig( propCfg ) ;
         parseJobConfig( propCfg ) ;
     }
     
@@ -156,18 +104,7 @@ public class ConfigManager{
         }
     }
     
-    private void parseCardCycleConfig( PropertiesConfiguration config )
-        throws Exception {
-        
-        if( config.containsKey( CK_RECYCLE_NUM_DAYS_THRESHOLD ) &&
-            config.containsKey( CK_RECYCLE_RETENTION_THRESHOLD ) ) {
-            
-            this.cycleNumDaysThreshold = config.getInt( CK_RECYCLE_NUM_DAYS_THRESHOLD ) ;
-            this.cycleMinRetentionThreshold = config.getInt( CK_RECYCLE_RETENTION_THRESHOLD ) ;
-        }
-    }
-    
-    private void parseJobConfig( PropertiesConfiguration config ) 
+    private void parseJobConfig( PropertiesConfiguration config )
         throws Exception {
         
         String[] jobIdList = config.getStringArray( CK_JOB_ID_LIST ) ;
@@ -239,13 +176,6 @@ public class ConfigManager{
         return value ;
     }
     
-    /**
-     * NOTE:
-     * 
-     * 1. --runMode defaults to development
-     * 2. If the same configuration exists in configuration file, then 
-     *    command line parameters override the configuration values.
-     */
     public void printUsage() {
         
         String usageStr = "JoveNotes [h] [--dbUser <database user>] " + 
@@ -308,5 +238,13 @@ public class ConfigManager{
             printUsage() ;
             throw e ;
         }
+    }
+    
+    public boolean isDevMode() {
+        return this.runMode == null || this.runMode.equalsIgnoreCase( "development" ) ;
+    }
+    
+    public boolean isProdMode() {
+        return !isDevMode() ;
     }
 }
