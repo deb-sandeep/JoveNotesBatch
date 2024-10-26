@@ -38,9 +38,10 @@ public class Database {
             
             public Connection makeObject() throws Exception {
                 log.debug( "\tCreating a new database connection." ) ;
-                return DriverManager.getConnection( 
-                                        Database.this.url, Database.this.user, 
-                                        Database.this.password ) ;
+                return DriverManager.getConnection(
+                                        Database.this.url,
+                                        Database.this.user,
+                                        Database.this.password );
             }
 
             public void destroyObject( Connection conn ) throws Exception {
@@ -48,7 +49,7 @@ public class Database {
                 conn.close() ;
             }
         }) ;
-        connectionPool.setMaxActive( 5 );
+        connectionPool.setMaxActive( 10 );
     }
     
     public Connection getConnection() throws Exception {

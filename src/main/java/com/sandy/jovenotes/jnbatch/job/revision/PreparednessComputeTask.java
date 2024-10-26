@@ -52,7 +52,6 @@ public class PreparednessComputeTask implements Callable<Void> {
     @Override
     public Void call() {
         log.info( "Computing preparedness for chapter : " + chapter.getDisplayName() ) ;
-        log.debug( chapter.toString() ) ;
         
         try {
             cardDBO.populateCards( chapter ) ;
@@ -71,7 +70,7 @@ public class PreparednessComputeTask implements Callable<Void> {
                 float probability = retentionComputer.getProbabilityOfRightAnswer( card ) ;
                 boolean predictedTestOutcome = retentionComputer.getPredictedTestOutcome( card ) ;
                 
-                card.setRetentionProbability( probability ) ;
+                card.setRetentionProbability( (int)(probability*100) ) ;
                 card.setPredictedTestOutcome( predictedTestOutcome ) ;
                 
                 totalChapterRetentionScore += (probability*100) ;

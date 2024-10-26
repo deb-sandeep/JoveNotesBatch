@@ -39,6 +39,11 @@ public class RetentionComputer {
     }
     
     public float getProbabilityOfRightAnswer( Card card ) {
+        
+        // The model is computed for a minimum of two attempts. So if
+        // its a fresh card, lets assume that it will be answered correctly.
+        if( card.getNumAttempts() == 0 ) return 1.0F ;
+        
         RetentionModel model = getModel( card ) ;
         
         // Note that numAttempts is being increased by 1 to calculate for
