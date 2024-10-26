@@ -95,6 +95,7 @@ public class CardDBO extends AbstractDBO {
         
         try {
             conn = super.getConnection() ;
+            conn.setAutoCommit( false ) ;
             psmt = conn.prepareStatement( queryStr ) ;
             
             for( Card card : chapter.getCards() ) {
@@ -114,6 +115,8 @@ public class CardDBO extends AbstractDBO {
                 }
             }
             psmt.executeBatch() ;
+            conn.commit() ;
+            conn.setAutoCommit( true ) ;
         }
         finally {
             if( conn != null ) {

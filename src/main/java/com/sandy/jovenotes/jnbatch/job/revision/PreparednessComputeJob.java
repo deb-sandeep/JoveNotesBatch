@@ -95,6 +95,8 @@ public class PreparednessComputeJob implements Job {
                 log.error( "Could not disarm manual trigger.", e );
             }
         }
+        
+        log.info( jobName + " finished execution @" + new Date() ) ;
     }
     
     private void extractConfigurationValues( JobExecutionContext context ) {
