@@ -8,7 +8,6 @@ import java.util.concurrent.Callable ;
 import com.sandy.jovenotes.jnbatch.job.revision.algo.RetentionComputer;
 import com.sandy.jovenotes.jnbatch.job.revision.dao.CardDBO;
 import com.sandy.jovenotes.jnbatch.job.revision.vo.Card;
-import org.apache.http.HttpEntity ;
 import org.apache.http.HttpResponse ;
 import org.apache.http.client.methods.HttpPost ;
 import org.apache.http.entity.ContentType ;
@@ -58,55 +57,39 @@ public class PreparednessComputeTask implements Callable<Void> {
             
             List<Card> cards = chapter.getCards() ;
             log.debug( "  Found " + cards.size() + " cards for evaluation." ) ;
-            if( cards.isEmpty() ) {
-                prepProcReqDbo.deleteRequest( chapter ) ;
-                return null ;
-            }
             
-            int numMasteredCards = 0 ;
-            float totalChapterRetentionScore = 0 ;
-            
-            for( Card card : cards ) {
-                float probability = retentionComputer.getProbabilityOfRightAnswer( card ) ;
-                boolean predictedTestOutcome = retentionComputer.getPredictedTestOutcome( card ) ;
+            if( !cards.isEmpty() ) {
+                populateCardRetentionsAndPredictedOutcomes() ;
+                populateChapterRetentionScore() ;
+
+                if( chapter.isInCurrentMode() ) {
+                    log.debug( "  Chapter is in current mode." ) ;
+                    if( chapter.areAllCardsMastered() ) {
+                        log.debug( "    All cards are mastered." ) ;
+                        resurrectNegativeOutcomeCardsAndChangePracticeLevel( "L2" ) ;
+                    }
+                }
+                else {
+                    log.debug( "  Chapter is in " + chapter.getPracticeLevel() + " revision mode." ) ;
+                    if( chapter.areAllCardsMastered() ) {
+                        log.debug( "    All cards are mastered." ) ;
+                        resurrectNegativeOutcomeCardsAndChangePracticeLevel( "L3" ) ;
+                    }
+                    else {
+                        String targetCardLevel = chapter.getPracticeLevel()
+                                                        .equalsIgnoreCase( "R-1" ) ? "L2" : "L3" ;
+                        resurrectNegativeOutcomeCards( targetCardLevel ) ;
+                    }
+                }
                 
-                card.setRetentionProbability( (int)(probability*100) ) ;
-                card.setPredictedTestOutcome( predictedTestOutcome ) ;
+                log.debug( "  Persisting changes." ) ;
+                persistChanges() ;
                 
-                totalChapterRetentionScore += (probability*100) ;
-                
-                if( card.getCurrentLevel().equalsIgnoreCase( "MAS" ) ) {
-                    numMasteredCards++ ;
+                if( chapter.getNumResurrectedCards() > 0 ) {
+                    log.info( "    Recomputing learning statistics." );
+                    invokeUpdateLearningStatusAPI() ;
                 }
             }
-            
-            chapter.setRetentionScore( totalChapterRetentionScore/cards.size() ) ;
-            log.info( "  Retention score = " + round( chapter.getRetentionScore() ) ) ;
-            
-            // If all the cards are mastered, this chapter is eligible for
-            // revision resurrection.
-            int numCardsResurrected = 0 ;
-            if( numMasteredCards < cards.size() ) {
-                if( chapter.getPracticeLevel() == null ) {
-                    chapter.setPracticeLevel( PRACTICE_LEVEL_CURRENT ) ;
-                }
-            }
-            else {
-                log.info( "  All cards are mastered. Enabling for next level revision." );
-                numCardsResurrected = enableChapterForRevision() ;
-            }
-            
-            log.debug( "  Persisting changes." ) ;
-            persistChanges() ;
-            
-            if( numCardsResurrected > 0 ) {
-                // Call the server to update the learning statistics so that
-                // the dashboard shows the card distributions according to
-                // revised levels.
-                log.info( "    Recomputing learning statistics." );
-                recomputeLearningStatusForChapter() ;
-            }
-            
             prepProcReqDbo.deleteRequest( chapter ) ;
         }
         catch( Exception e ) {
@@ -116,31 +99,48 @@ public class PreparednessComputeTask implements Callable<Void> {
         return null ;
     }
     
-    private int enableChapterForRevision() {
+    private void populateCardRetentionsAndPredictedOutcomes() {
+        List<Card> cards = chapter.getCards() ;
+        for( Card card : cards ) {
+            float probability = retentionComputer.getProbabilityOfRightAnswer( card ) ;
+            boolean predictedTestOutcome = retentionComputer.getPredictedTestOutcome( card ) ;
+            
+            card.setRetentionProbability( (int)(probability*100) ) ;
+            card.setPredictedTestOutcome( predictedTestOutcome ) ;
+        }
+    }
+    
+    private void populateChapterRetentionScore() {
+        float totalChapterRetentionScore = 0 ;
+        for( Card card : chapter.getCards() ) {
+            totalChapterRetentionScore += card.getRetentionProbability() ;
+        }
+        chapter.setRetentionScore( totalChapterRetentionScore/chapter.getNumCards() ) ;
+        log.info( "  Retention score = " + round( chapter.getRetentionScore() ) ) ;
+    }
+    
+    private int resurrectNegativeOutcomeCards( String targetCardLevel ) {
         
-        String nextPracticeLevel = getNextPracticeLevel() ;
-
         int numCardsResurrected = 0 ;
         for( Card card : chapter.getCards() ) {
-            if( !card.getPredictedTestOutcome() ) {
-                String newLevel = nextPracticeLevel.equals( "R-1" ) ? "L2" : "L3" ;
-                card.setResurrectionLevel( newLevel ) ;
+            if( card.getCurrentLevel().equals( "MAS" ) &&
+                !card.getPredictedTestOutcome() ) {
+                
+                card.setResurrectionLevel( targetCardLevel ) ;
                 numCardsResurrected++ ;
             }
         }
-        
-        // Change the revision lap only if we have cards resurrected, else
-        // we will end up with a higher lap and no active cards.
-        if( numCardsResurrected > 0 ) {
-            chapter.setPracticeLevel( nextPracticeLevel ) ;
-            log.info( "    Revision level " + chapter.getPracticeLevel() ) ;
-            log.info( "    " + numCardsResurrected + " resurrected cards." ) ;
-        }
-        else {
-            log.info( "    No resurrected cards, hence no change in revision lap." ) ;
-        }
-
+        log.debug( "    " + numCardsResurrected + " cards resurrected at " + targetCardLevel + " level." ) ;
         return numCardsResurrected ;
+    }
+    
+    private void resurrectNegativeOutcomeCardsAndChangePracticeLevel( String targetCardLevel ) {
+        int numResurrectedCards = resurrectNegativeOutcomeCards( targetCardLevel ) ;
+        log.debug( "    " + numResurrectedCards + " cards resurrected at L3 level." ) ;
+        if( numResurrectedCards > 0 ) {
+            chapter.setPracticeLevel( getNextPracticeLevel() ) ;
+            log.debug( "    Changed practice level to " + chapter.getPracticeLevel() ) ;
+        }
     }
     
     private String getNextPracticeLevel() {
@@ -167,8 +167,7 @@ public class PreparednessComputeTask implements Callable<Void> {
         cardDBO.saveChanges( chapter ) ;
     }
     
-    private void recomputeLearningStatusForChapter() 
-        throws Exception {
+    private void invokeUpdateLearningStatusAPI() throws Exception {
         
         String jsonPayload = getAPIRequestPayload() ;
         StringEntity payload = new StringEntity( jsonPayload, 

@@ -25,6 +25,7 @@ public class Chapter {
     private boolean dirty = false ;
     
     private transient final List<Card> cards = new ArrayList<>() ;
+    private transient int numMasteredCards = 0 ;
     
     public Chapter( String studentName,
                     int chapterId,
@@ -43,6 +44,10 @@ public class Chapter {
         this.subChapterNum = subChapterNum ;
         this.chapterName   = chapterName ;
         this.practiceLevel = practiceLevel ;
+        
+        if( this.practiceLevel == null ) {
+            setPracticeLevel( "CUR" ) ;
+        }
     }
     
     public String getStudentName()  { return studentName ;   }
@@ -53,8 +58,7 @@ public class Chapter {
     public int    getSubChapterNum(){ return subChapterNum ; }
     public String getChapterName()  { return chapterName ;   }
     
-    public void addCard( Card card ) { cards.add( card ) ; }
-    public List<Card> getCards() { return this.cards ; }
+    public boolean isDirty() { return this.dirty ; }
     
     public void setPracticeLevel( String newLevel ) {
         this.practiceLevel = newLevel ;
@@ -63,6 +67,10 @@ public class Chapter {
     
     public String getPracticeLevel() { return this.practiceLevel ; }
     
+    public boolean isInCurrentMode() { return this.practiceLevel.equals( "CUR" ) ; }
+    
+    public boolean isInRevisionMode() { return this.practiceLevel.startsWith( "R-" ) ; }
+    
     public void setRetentionScore( float score ) {
         this.retentionScore = score ;
         this.dirty = true ;
@@ -70,7 +78,30 @@ public class Chapter {
     
     public float getRetentionScore() { return this.retentionScore ; }
     
-    public boolean isDirty() { return this.dirty ; }
+    public void addCard( Card card ) {
+        cards.add( card ) ;
+        if( card.getCurrentLevel().equalsIgnoreCase( "MAS" ) ) {
+            numMasteredCards++ ;
+        }
+    }
+    
+    public List<Card> getCards() { return this.cards ; }
+    
+    public int getNumCards() { return this.cards.size() ; }
+    
+    public int getNumMasteredCards() { return this.numMasteredCards ; }
+    
+    public boolean areAllCardsMastered() { return  this.numMasteredCards == cards.size() ; }
+    
+    public int getNumResurrectedCards() {
+        int numResurrectedCards = 0 ;
+        for( Card card : cards ) {
+            if( card.getResurrectionLevel() != null ) {
+                numResurrectedCards++ ;
+            }
+        }
+        return numResurrectedCards ;
+    }
 
     @Override
     public String toString() {
