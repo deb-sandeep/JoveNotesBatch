@@ -102,11 +102,12 @@ public class PreparednessComputeTask implements Callable<Void> {
     private void populateCardRetentionsAndPredictedOutcomes() {
         List<Card> cards = chapter.getCards() ;
         for( Card card : cards ) {
+            
             float probability = retentionComputer.getProbabilityOfRightAnswer( card ) ;
-            boolean predictedTestOutcome = retentionComputer.getPredictedTestOutcome( card ) ;
+            boolean regressionTestOutcome = retentionComputer.getPredictedTestOutcome( card ) ;
             
             card.setRetentionProbability( (int)(probability*100) ) ;
-            card.setPredictedTestOutcome( predictedTestOutcome ) ;
+            card.setPredictedTestOutcome( regressionTestOutcome ) ;
         }
     }
     
@@ -123,8 +124,19 @@ public class PreparednessComputeTask implements Callable<Void> {
         
         int numCardsResurrected = 0 ;
         for( Card card : chapter.getCards() ) {
+            
+            boolean regressionTestOutcome = card.getPredictedTestOutcome() ;
+            boolean resurrectionOverride  = retentionComputer.getManualResurrectionOverride( card ) ;
+            
+            boolean predictedOutcome = regressionTestOutcome ;
+            if( !resurrectionOverride ) {
+                // If subjective test outcome is false, it overrides the
+                // regression test outcome.
+                predictedOutcome = false ;
+            }
+
             if( card.getCurrentLevel().equals( "MAS" ) &&
-                !card.getPredictedTestOutcome() ) {
+                !predictedOutcome ) {
                 
                 card.setResurrectionLevel( targetCardLevel ) ;
                 numCardsResurrected++ ;
