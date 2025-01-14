@@ -64,17 +64,19 @@ public class RetentionComputer {
         return getProbabilityOfRightAnswer( card ) >= model.threshold ;
     }
     
+    // Returns true, if the card should be resurrected irrespective of the
+    // prediction model's outcome. This is a subjective decision.
     public boolean getManualResurrectionOverride( Card card ) {
 
-        // We, by experience predict some cards to have a false outcome
-        // This takes precedence even if the regression algorithm predicts
-        // a high probability of success. This gets applied only in case
-        // of resurrection of cards.
         if( card.getAbsLE() <= 60 ||
             card.getNumAttempts() == 2 ||
             card.getGapDuration() > 120 ) {
-            return false ;
+            return true ;
         }
+        return false ;
+    }
+    
+    public boolean activateForRevision( Card card ) {
         return true ;
     }
     

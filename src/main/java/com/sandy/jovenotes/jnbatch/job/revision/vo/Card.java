@@ -14,6 +14,7 @@ public class Card {
     private final int    numAttempts ;
     private final int    gapDuration ;
     private final int    absLE ;
+    private final int    le ;
     private final String currentLevel ;
     
     private float retentionProbability = 0 ;
@@ -24,7 +25,7 @@ public class Card {
     
     public Card( Chapter chapter, int cardId, String cardType,
                  int difficulty, float avgTimeSpent, int numAttempts,
-                 int gapDuration, int absLE, String currentLevel ) {
+                 int gapDuration, int absLE, int le, String currentLevel ) {
         
         this.chapter      = chapter ;
         this.cardId       = cardId ;
@@ -34,6 +35,7 @@ public class Card {
         this.numAttempts  = numAttempts ;
         this.gapDuration  = gapDuration ;
         this.absLE        = absLE ;
+        this.le           = le ;
         this.currentLevel = currentLevel ;
     }
     
@@ -45,6 +47,7 @@ public class Card {
     public int     getNumAttempts()  { return numAttempts ;  }
     public int     getGapDuration()  { return gapDuration ;  }
     public int     getAbsLE()        { return absLE ;        }
+    public int     getLE()           { return le ;           }
     public String  getCurrentLevel() { return currentLevel;  }
     
     public void setRetentionProbability( float p ) {

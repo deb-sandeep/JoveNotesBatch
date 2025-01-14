@@ -22,6 +22,7 @@ public class CardDBO extends AbstractDBO {
                 "      cls.num_attempts, " +
                 "      DATEDIFF(CURDATE(), cls.last_attempt_time) as gap_duration, " +
                 "      cls.abs_learning_efficiency, " +
+                "      cls.learning_efficiency, " +
                 "      cls.current_level " +
                 "from " +
                 "      jove_notes.card c " +
@@ -68,11 +69,12 @@ public class CardDBO extends AbstractDBO {
         int    numAttempts  = rs.getInt    ( "num_attempts"            ) ;
         int    gapDuration  = rs.getInt    ( "gap_duration"            ) ;
         int    absLE        = rs.getInt    ( "abs_learning_efficiency" ) ;
+        int    le           = rs.getInt    ( "learning_efficiency"     ) ;
         String currentLevel = rs.getString ( "current_level"           ) ;
         
         return new Card(
                 chapter, cardId, cardType, difficulty,
-                avgTimeSpent, numAttempts, gapDuration, absLE, currentLevel
+                avgTimeSpent, numAttempts, gapDuration, absLE, le, currentLevel
         ) ;
     }
     

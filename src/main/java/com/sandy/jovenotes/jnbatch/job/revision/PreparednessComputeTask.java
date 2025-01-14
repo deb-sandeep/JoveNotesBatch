@@ -66,19 +66,19 @@ public class PreparednessComputeTask implements Callable<Void> {
                     log.debug( "  Chapter is in current mode." ) ;
                     if( chapter.areAllCardsMastered() ) {
                         log.debug( "    All cards are mastered." ) ;
-                        resurrectNegativeOutcomeCardsAndChangePracticeLevel( "L2" ) ;
+                        activateCardsForFinalRevisionAndChangePracticeLevel( "L2" ) ;
                     }
                 }
                 else {
                     log.debug( "  Chapter is in " + chapter.getPracticeLevel() + " revision mode." ) ;
                     if( chapter.areAllCardsMastered() ) {
                         log.debug( "    All cards are mastered." ) ;
-                        resurrectNegativeOutcomeCardsAndChangePracticeLevel( "L3" ) ;
+                        activateCardsForFinalRevisionAndChangePracticeLevel( "L3" ); ;
                     }
                     else {
                         String targetCardLevel = chapter.getPracticeLevel()
                                                         .equalsIgnoreCase( "R-1" ) ? "L2" : "L3" ;
-                        resurrectNegativeOutcomeCards( targetCardLevel ) ;
+                        activateCardsForFinalRevision( targetCardLevel ); ;
                     }
                 }
                 
@@ -120,6 +120,15 @@ public class PreparednessComputeTask implements Callable<Void> {
         log.info( "  Retention score = " + round( chapter.getRetentionScore() ) ) ;
     }
     
+    private void resurrectNegativeOutcomeCardsAndChangePracticeLevel( String targetCardLevel ) {
+        int numResurrectedCards = resurrectNegativeOutcomeCards( targetCardLevel ) ;
+        log.debug( "    " + numResurrectedCards + " cards resurrected at L3 level." ) ;
+        if( numResurrectedCards > 0 ) {
+            chapter.setPracticeLevel( getNextPracticeLevel() ) ;
+            log.debug( "    Changed practice level to " + chapter.getPracticeLevel() ) ;
+        }
+    }
+    
     private int resurrectNegativeOutcomeCards( String targetCardLevel ) {
         
         int numCardsResurrected = 0 ;
@@ -129,12 +138,10 @@ public class PreparednessComputeTask implements Callable<Void> {
             boolean resurrectionOverride  = retentionComputer.getManualResurrectionOverride( card ) ;
             
             boolean predictedOutcome = regressionTestOutcome ;
-            if( !resurrectionOverride ) {
-                // If subjective test outcome is false, it overrides the
-                // regression test outcome.
+            if( resurrectionOverride ) {
                 predictedOutcome = false ;
             }
-
+            
             if( card.getCurrentLevel().equals( "MAS" ) &&
                 !predictedOutcome ) {
                 
@@ -146,13 +153,44 @@ public class PreparednessComputeTask implements Callable<Void> {
         return numCardsResurrected ;
     }
     
-    private void resurrectNegativeOutcomeCardsAndChangePracticeLevel( String targetCardLevel ) {
-        int numResurrectedCards = resurrectNegativeOutcomeCards( targetCardLevel ) ;
-        log.debug( "    " + numResurrectedCards + " cards resurrected at L3 level." ) ;
-        if( numResurrectedCards > 0 ) {
+    private void activateCardsForFinalRevisionAndChangePracticeLevel( String targetCardLevel ) {
+        
+        int numActivatedCards = activateCardsForFinalRevision( targetCardLevel ) ;
+        log.debug( "    " + numActivatedCards + " cards activated at L3 level." ) ;
+        if( numActivatedCards > 0 ) {
             chapter.setPracticeLevel( getNextPracticeLevel() ) ;
             log.debug( "    Changed practice level to " + chapter.getPracticeLevel() ) ;
         }
+    }
+    
+    private int activateCardsForFinalRevision( String targetCardLevel ) {
+        
+        int numCardsActivated = 0 ;
+        for( Card card : chapter.getCards() ) {
+            
+            // If the card is at L0 or NS level, leave them there.
+            if( card.getCurrentLevel().equals( "L0" ) ||
+                card.getCurrentLevel().equals( "NS" ) ) {
+                continue ;
+            }
+            // Else if the card has not been practiced for more than 120 days
+            // activate it for revision.
+            else if( card.getGapDuration() > 120 ) {
+                card.setResurrectionLevel( targetCardLevel ) ;
+                numCardsActivated++ ;
+            }
+            // Else if the cards has learning efficiency less than 100, activate it.
+            else if( card.getLE() < 90 ) {
+                card.setResurrectionLevel( targetCardLevel ) ;
+                numCardsActivated++ ;
+            }
+            // else set the activation level to mastered
+            else {
+                card.setResurrectionLevel( "MAS" ) ;
+            }
+        }
+        log.debug( "    " + numCardsActivated + " cards activated at " + targetCardLevel + " level." ) ;
+        return numCardsActivated ;
     }
     
     private String getNextPracticeLevel() {
