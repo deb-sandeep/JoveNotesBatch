@@ -173,9 +173,9 @@ public class PreparednessComputeTask implements Callable<Void> {
                 card.getCurrentLevel().equals( "NS" ) ) {
                 continue ;
             }
-            // Else if the card has not been practiced for more than 120 days
+            // Else if the card has not been practiced for more than 90 days
             // activate it for revision.
-            else if( card.getGapDuration() > 120 ) {
+            else if( card.getGapDuration() > 90 ) {
                 card.setResurrectionLevel( targetCardLevel ) ;
                 numCardsActivated++ ;
             }
